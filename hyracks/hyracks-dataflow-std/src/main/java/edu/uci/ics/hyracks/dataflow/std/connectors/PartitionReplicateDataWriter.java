@@ -18,18 +18,19 @@ import java.nio.ByteBuffer;
 
 import edu.uci.ics.hyracks.api.comm.IPartitionWriterFactory;
 import edu.uci.ics.hyracks.api.context.IHyracksTaskContext;
-import edu.uci.ics.hyracks.api.dataflow.value.ITuplePartitionComputer;
+import edu.uci.ics.hyracks.api.dataflow.value.ITuplePartitionReplicatorComputer;
 import edu.uci.ics.hyracks.api.dataflow.value.RecordDescriptor;
 import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
 import edu.uci.ics.hyracks.dataflow.common.comm.util.FrameUtils;
 
-public class PartitionDataWriter extends AbstractPartitionDataWriter {
-    private final ITuplePartitionComputer tpc;
+public class PartitionReplicateDataWriter extends AbstractPartitionDataWriter {
+    private final ITuplePartitionReplicatorComputer tprc;
 
-    public PartitionDataWriter(IHyracksTaskContext ctx, int consumerPartitionCount, IPartitionWriterFactory pwFactory,
-            RecordDescriptor recordDescriptor, ITuplePartitionComputer tpc) throws HyracksDataException {
+    public PartitionReplicateDataWriter(IHyracksTaskContext ctx, int consumerPartitionCount,
+            IPartitionWriterFactory pwFactory, RecordDescriptor recordDescriptor, ITuplePartitionReplicatorComputer tprc)
+            throws HyracksDataException {
         super(ctx, consumerPartitionCount, pwFactory,recordDescriptor);
-        this.tpc = tpc;
+        this.tprc = tprc;
     }
 
     @Override
@@ -41,8 +42,10 @@ public class PartitionDataWriter extends AbstractPartitionDataWriter {
         tupleAccessor.reset(buffer);
         int tupleCount = tupleAccessor.getTupleCount();
         for (int i = 0; i < tupleCount; ++i) {
-            int h = tpc.partition(tupleAccessor, i, consumerPartitionCount);
-            FrameUtils.appendToWriter(pWriters[h], appenders[h], tupleAccessor, i);
+            int[] h = tprc.partition(tupleAccessor, i, consumerPartitionCount);
+            for (int j = 0; j < h.length; ++j) {
+                FrameUtils.appendToWriter(pWriters[h[j]], appenders[h[j]], tupleAccessor, i);
+            }
         }
     }
 }

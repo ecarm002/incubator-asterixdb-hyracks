@@ -17,17 +17,17 @@ package edu.uci.ics.hyracks.dataflow.common.data.partition.range;
 import edu.uci.ics.hyracks.api.comm.IFrameTupleAccessor;
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryComparator;
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryComparatorFactory;
-import edu.uci.ics.hyracks.api.dataflow.value.ITuplePartitionComputer;
-import edu.uci.ics.hyracks.api.dataflow.value.ITuplePartitionComputerFactory;
+import edu.uci.ics.hyracks.api.dataflow.value.ITuplePartitionReplicatorComputer;
+import edu.uci.ics.hyracks.api.dataflow.value.ITuplePartitionReplicatorComputerFactory;
 import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
 
-public class FieldRangePartitionComputerFactory implements ITuplePartitionComputerFactory {
+public class FieldRangePartitionReplicateComputerFactory implements ITuplePartitionReplicatorComputerFactory {
     private static final long serialVersionUID = 1L;
     private final int[] rangeFields;
     private IRangeMap rangeMap;
     private IBinaryComparatorFactory[] comparatorFactories;
 
-    public FieldRangePartitionComputerFactory(int[] rangeFields, IBinaryComparatorFactory[] comparatorFactories,
+    public FieldRangePartitionReplicateComputerFactory(int[] rangeFields, IBinaryComparatorFactory[] comparatorFactories,
             IRangeMap rangeMap) {
         this.rangeFields = rangeFields;
         this.comparatorFactories = comparatorFactories;
@@ -35,19 +35,19 @@ public class FieldRangePartitionComputerFactory implements ITuplePartitionComput
     }
 
     @Override
-    public ITuplePartitionComputer createPartitioner() {
+    public ITuplePartitionReplicatorComputer createPartitioner() {
         final IBinaryComparator[] comparators = new IBinaryComparator[comparatorFactories.length];
         for (int i = 0; i < comparatorFactories.length; ++i) {
             comparators[i] = comparatorFactories[i].createBinaryComparator();
         }
-        return new ITuplePartitionComputer() {
+        return new ITuplePartitionReplicatorComputer() {
             @Override
             /**
              * Determine the range partition. 
              */
-            public int partition(IFrameTupleAccessor accessor, int tIndex, int nParts) throws HyracksDataException {
+            public int[] partition(IFrameTupleAccessor accessor, int tIndex, int nParts) throws HyracksDataException {
                 if (nParts == 1) {
-                    return 0;
+                    return null;
                 }
                 int slotIndex = getRangePartition(accessor, tIndex);
                 // Map range partition to node partitions.
@@ -55,7 +55,8 @@ public class FieldRangePartitionComputerFactory implements ITuplePartitionComput
                 if (rangeMap.getSplitCount() + 1 > nParts) {
                     rangesPerPart = ((double) rangeMap.getSplitCount() + 1) / nParts;
                 }
-                return (int) Math.floor(slotIndex / rangesPerPart);
+//                return (int) Math.floor(slotIndex / rangesPerPart);
+                return null;
             }
 
             /*

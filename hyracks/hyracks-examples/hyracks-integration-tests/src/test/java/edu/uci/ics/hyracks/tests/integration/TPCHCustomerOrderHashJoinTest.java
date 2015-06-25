@@ -37,7 +37,7 @@ import edu.uci.ics.hyracks.dataflow.common.data.parsers.IValueParserFactory;
 import edu.uci.ics.hyracks.dataflow.common.data.parsers.UTF8StringParserFactory;
 import edu.uci.ics.hyracks.dataflow.common.data.partition.FieldHashPartitionComputerFactory;
 import edu.uci.ics.hyracks.dataflow.std.connectors.MToNPartitioningConnectorDescriptor;
-import edu.uci.ics.hyracks.dataflow.std.connectors.MToNReplicatingConnectorDescriptor;
+import edu.uci.ics.hyracks.dataflow.std.connectors.MToNBroadcastConnectorDescriptor;
 import edu.uci.ics.hyracks.dataflow.std.connectors.OneToOneConnectorDescriptor;
 import edu.uci.ics.hyracks.dataflow.std.file.ConstantFileSplitProvider;
 import edu.uci.ics.hyracks.dataflow.std.file.DelimitedDataTupleParserFactory;
@@ -651,7 +651,7 @@ public class TPCHCustomerOrderHashJoinTest extends AbstractIntegrationTest {
                                 .of(UTF8StringPointable.FACTORY) }));
         spec.connect(custJoinConn, custScanner, 0, join, 1);
 
-        IConnectorDescriptor joinPrinterConn = new MToNReplicatingConnectorDescriptor(spec);
+        IConnectorDescriptor joinPrinterConn = new MToNBroadcastConnectorDescriptor(spec);
         spec.connect(joinPrinterConn, join, 0, printer, 0);
 
         spec.addRoot(printer);
@@ -742,7 +742,7 @@ public class TPCHCustomerOrderHashJoinTest extends AbstractIntegrationTest {
                                 .of(UTF8StringPointable.FACTORY) }));
         spec.connect(custJoinConn, custScanner, 0, join, 1);
 
-        IConnectorDescriptor joinPrinterConn = new MToNReplicatingConnectorDescriptor(spec);
+        IConnectorDescriptor joinPrinterConn = new MToNBroadcastConnectorDescriptor(spec);
         spec.connect(joinPrinterConn, join, 0, printer, 0);
 
         spec.addRoot(printer);
@@ -833,7 +833,7 @@ public class TPCHCustomerOrderHashJoinTest extends AbstractIntegrationTest {
                                 .of(UTF8StringPointable.FACTORY) }));
         spec.connect(custJoinConn, custScanner, 0, join, 1);
 
-        IConnectorDescriptor joinPrinterConn = new MToNReplicatingConnectorDescriptor(spec);
+        IConnectorDescriptor joinPrinterConn = new MToNBroadcastConnectorDescriptor(spec);
         spec.connect(joinPrinterConn, join, 0, printer, 0);
 
         spec.addRoot(printer);
@@ -920,7 +920,7 @@ public class TPCHCustomerOrderHashJoinTest extends AbstractIntegrationTest {
                                 .of(UTF8StringPointable.FACTORY) }));
         spec.connect(custJoinConn, custScanner, 0, join, 1);
 
-        IConnectorDescriptor joinPrinterConn = new MToNReplicatingConnectorDescriptor(spec);
+        IConnectorDescriptor joinPrinterConn = new MToNBroadcastConnectorDescriptor(spec);
         spec.connect(joinPrinterConn, join, 0, printer, 0);
 
         spec.addRoot(printer);
@@ -1019,7 +1019,7 @@ public class TPCHCustomerOrderHashJoinTest extends AbstractIntegrationTest {
         IConnectorDescriptor custJoinConn = new OneToOneConnectorDescriptor(spec);
         spec.connect(custJoinConn, custMat, 0, join, 1);
 
-        IConnectorDescriptor joinPrinterConn = new MToNReplicatingConnectorDescriptor(spec);
+        IConnectorDescriptor joinPrinterConn = new MToNBroadcastConnectorDescriptor(spec);
         spec.connect(joinPrinterConn, join, 0, printer, 0);
 
         spec.addRoot(printer);

@@ -38,7 +38,7 @@ import edu.uci.ics.hyracks.dataflow.common.data.parsers.IValueParserFactory;
 import edu.uci.ics.hyracks.dataflow.common.data.parsers.UTF8StringParserFactory;
 import edu.uci.ics.hyracks.dataflow.common.data.partition.FieldHashPartitionComputerFactory;
 import edu.uci.ics.hyracks.dataflow.std.connectors.MToNPartitioningConnectorDescriptor;
-import edu.uci.ics.hyracks.dataflow.std.connectors.MToNReplicatingConnectorDescriptor;
+import edu.uci.ics.hyracks.dataflow.std.connectors.MToNBroadcastConnectorDescriptor;
 import edu.uci.ics.hyracks.dataflow.std.connectors.OneToOneConnectorDescriptor;
 import edu.uci.ics.hyracks.dataflow.std.file.ConstantFileSplitProvider;
 import edu.uci.ics.hyracks.dataflow.std.file.DelimitedDataTupleParserFactory;
@@ -120,7 +120,7 @@ public class CountOfCountsTest extends AbstractIntegrationTest {
         IConnectorDescriptor conn4 = new OneToOneConnectorDescriptor(spec);
         spec.connect(conn4, sorter2, 0, group2, 0);
 
-        IConnectorDescriptor conn5 = new MToNReplicatingConnectorDescriptor(spec);
+        IConnectorDescriptor conn5 = new MToNBroadcastConnectorDescriptor(spec);
         spec.connect(conn5, group2, 0, printer, 0);
 
         spec.addRoot(printer);
@@ -193,7 +193,7 @@ public class CountOfCountsTest extends AbstractIntegrationTest {
         IConnectorDescriptor conn4 = new OneToOneConnectorDescriptor(spec);
         spec.connect(conn4, sorter2, 0, group2, 0);
 
-        IConnectorDescriptor conn5 = new MToNReplicatingConnectorDescriptor(spec);
+        IConnectorDescriptor conn5 = new MToNBroadcastConnectorDescriptor(spec);
         spec.connect(conn5, group2, 0, printer, 0);
 
         spec.addRoot(printer);
@@ -266,7 +266,7 @@ public class CountOfCountsTest extends AbstractIntegrationTest {
         IConnectorDescriptor conn4 = new OneToOneConnectorDescriptor(spec);
         spec.connect(conn4, sorter2, 0, group2, 0);
 
-        IConnectorDescriptor conn5 = new MToNReplicatingConnectorDescriptor(spec);
+        IConnectorDescriptor conn5 = new MToNBroadcastConnectorDescriptor(spec);
         spec.connect(conn5, group2, 0, printer, 0);
 
         spec.addRoot(printer);

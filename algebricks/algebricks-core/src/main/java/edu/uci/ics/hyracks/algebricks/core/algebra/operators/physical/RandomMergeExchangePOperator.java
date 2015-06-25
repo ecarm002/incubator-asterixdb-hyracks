@@ -30,7 +30,7 @@ import edu.uci.ics.hyracks.algebricks.core.algebra.properties.StructuralProperti
 import edu.uci.ics.hyracks.algebricks.core.jobgen.impl.JobGenContext;
 import edu.uci.ics.hyracks.api.dataflow.IConnectorDescriptor;
 import edu.uci.ics.hyracks.api.job.IConnectorDescriptorRegistry;
-import edu.uci.ics.hyracks.dataflow.std.connectors.MToNReplicatingConnectorDescriptor;
+import edu.uci.ics.hyracks.dataflow.std.connectors.MToNBroadcastConnectorDescriptor;
 
 public class RandomMergeExchangePOperator extends AbstractExchangePOperator {
 
@@ -54,7 +54,7 @@ public class RandomMergeExchangePOperator extends AbstractExchangePOperator {
     @Override
     public Pair<IConnectorDescriptor, TargetConstraint> createConnectorDescriptor(IConnectorDescriptorRegistry spec,
             ILogicalOperator op, IOperatorSchema opSchema, JobGenContext context) {
-        IConnectorDescriptor conn = new MToNReplicatingConnectorDescriptor(spec);
+        IConnectorDescriptor conn = new MToNBroadcastConnectorDescriptor(spec);
         return new Pair<IConnectorDescriptor, TargetConstraint>(conn, TargetConstraint.ONE);
     }
 }
