@@ -16,7 +16,7 @@ package edu.uci.ics.hyracks.algebricks.core.algebra.expressions;
 
 public class IndexedNLJoinExpressionAnnotation implements IExpressionAnnotation {
 
-    public static final String INDEXED_NL_JOIN_ANNOTATION_KEY = "indexnl";
+    public static final String HINT_STRING = "indexnl";
     public static final IndexedNLJoinExpressionAnnotation INSTANCE = new IndexedNLJoinExpressionAnnotation();
 
     private Object object;
