@@ -3,9 +3,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * you may obtain a copy of the License from
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -61,8 +61,8 @@ import edu.uci.ics.hyracks.algebricks.core.rewriter.base.IAlgebraicRewriteRule;
 import edu.uci.ics.hyracks.algebricks.rewriter.util.PhysicalOptimizationsUtil;
 
 /**
- * The rule searches for unnest(iterate) operator followed by an assign(child)
- * operator and merges the assign into the unnest operator.
+ * The rule searches for SUBPLAN operator with a optional PROJECT operator and
+ * an AGGREGATE followed by a join operator.
  *
  * <pre>
  * Before
@@ -71,18 +71,27 @@ import edu.uci.ics.hyracks.algebricks.rewriter.util.PhysicalOptimizationsUtil;
  *   SUBPLAN {
  *     PROJECT?
  *     AGGREGATE
+ *     plan__nested_A
  *     INNER_JOIN | LEFT_OUTER_JOIN ($condition, $left, $right)
+ *       plan__nested_B
  *   }
  *   plan__child
  * 
  *   where $condition does not equal a constant true.
  * 
- * After
+ * After (This is a general application of the rule, specifics may vary based on the query plan.)
  * 
  *   plan__parent
  *   GROUP_BY {
- *     ASSIGN( $v2 : algebricks:not( is_null( $right ) ) )
+ *     PROJECT?
+ *     AGGREGATE
+ *     plan__nested_A
+ *     SELECT( algebricks:not( is_null( $right ) ) )
  *     NESTED_TUPLE_SOURCE
+ *   }
+ *   SUBPLAN {
+ *     INNER_JOIN | LEFT_OUTER_JOIN ($condition, $left, $right)
+ *       plan__nested_B
  *   }
  *   plan__child
  * </pre>
