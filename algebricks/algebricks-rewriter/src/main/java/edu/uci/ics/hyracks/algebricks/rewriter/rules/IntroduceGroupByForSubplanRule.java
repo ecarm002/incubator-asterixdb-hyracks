@@ -60,6 +60,36 @@ import edu.uci.ics.hyracks.algebricks.core.config.AlgebricksConfig;
 import edu.uci.ics.hyracks.algebricks.core.rewriter.base.IAlgebraicRewriteRule;
 import edu.uci.ics.hyracks.algebricks.rewriter.util.PhysicalOptimizationsUtil;
 
+/**
+ * The rule searches for unnest(iterate) operator followed by an assign(child)
+ * operator and merges the assign into the unnest operator.
+ *
+ * <pre>
+ * Before
+ * 
+ *   plan__parent
+ *   SUBPLAN {
+ *     PROJECT?
+ *     AGGREGATE
+ *     INNER_JOIN | LEFT_OUTER_JOIN ($condition, $left, $right)
+ *   }
+ *   plan__child
+ * 
+ *   where $condition does not equal a constant true.
+ * 
+ * After
+ * 
+ *   plan__parent
+ *   GROUP_BY {
+ *     ASSIGN( $v2 : algebricks:not( is_null( $right ) ) )
+ *     NESTED_TUPLE_SOURCE
+ *   }
+ *   plan__child
+ * </pre>
+ *
+ * @author prestonc
+ */
+
 public class IntroduceGroupByForSubplanRule implements IAlgebraicRewriteRule {
 
     @Override
