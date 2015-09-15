@@ -1,16 +1,20 @@
 /*
- * Copyright 2009-2013 by The Regents of the University of California
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * you may obtain a copy of the License from
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.apache.hyracks.dataflow.common.data.partition.range;
 
@@ -27,8 +31,8 @@ public class FieldRangePartitionReplicateComputerFactory implements ITuplePartit
     private IRangeMap rangeMap;
     private IBinaryComparatorFactory[] comparatorFactories;
 
-    public FieldRangePartitionReplicateComputerFactory(int[] rangeFields, IBinaryComparatorFactory[] comparatorFactories,
-            IRangeMap rangeMap) {
+    public FieldRangePartitionReplicateComputerFactory(int[] rangeFields,
+            IBinaryComparatorFactory[] comparatorFactories, IRangeMap rangeMap) {
         this.rangeFields = rangeFields;
         this.comparatorFactories = comparatorFactories;
         this.rangeMap = rangeMap;
@@ -43,7 +47,7 @@ public class FieldRangePartitionReplicateComputerFactory implements ITuplePartit
         return new ITuplePartitionReplicatorComputer() {
             @Override
             /**
-             * Determine the range partition. 
+             * Determine the range partition.
              */
             public int[] partition(IFrameTupleAccessor accessor, int tIndex, int nParts) throws HyracksDataException {
                 if (nParts == 1) {
@@ -55,7 +59,7 @@ public class FieldRangePartitionReplicateComputerFactory implements ITuplePartit
                 if (rangeMap.getSplitCount() + 1 > nParts) {
                     rangesPerPart = ((double) rangeMap.getSplitCount() + 1) / nParts;
                 }
-//                return (int) Math.floor(slotIndex / rangesPerPart);
+                //                return (int) Math.floor(slotIndex / rangesPerPart);
                 return null;
             }
 
@@ -84,8 +88,8 @@ public class FieldRangePartitionReplicateComputerFactory implements ITuplePartit
                     int fIdx = rangeFields[f];
                     int fStart = accessor.getFieldStartOffset(tIndex, fIdx);
                     int fEnd = accessor.getFieldEndOffset(tIndex, fIdx);
-                    c = comparators[f].compare(accessor.getBuffer().array(), startOffset + slotLength + fStart, fEnd
-                            - fStart, rangeMap.getByteArray(fieldIndex, f), rangeMap.getStartOffset(fieldIndex, f),
+                    c = comparators[f].compare(accessor.getBuffer().array(), startOffset + slotLength + fStart,
+                            fEnd - fStart, rangeMap.getByteArray(fieldIndex, f), rangeMap.getStartOffset(fieldIndex, f),
                             rangeMap.getLength(fieldIndex, f));
                     if (c != 0) {
                         return c;
