@@ -80,7 +80,7 @@ public class SortMergeExchangePOperator extends AbstractExchangePOperator {
         for (int i = 1; i < sortColumns.length; i++) {
             sb.append(", " + sortColumns[i]);
         }
-        sb.append(" ]");
+        sb.append("]");
         return sb.toString();
     }
 
