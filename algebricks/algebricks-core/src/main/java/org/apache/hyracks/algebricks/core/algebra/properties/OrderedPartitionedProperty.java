@@ -35,6 +35,7 @@ import org.apache.hyracks.dataflow.common.data.partition.range.IRangePartitionTy
 import org.apache.hyracks.algebricks.core.algebra.properties.IPartitioningProperty.PartitioningType;
 
 public class OrderedPartitionedProperty implements IPartitioningProperty {
+
     private List<OrderColumn> orderColumns;
     private INodeDomain domain;
     private IRangeMap rangeMap;
