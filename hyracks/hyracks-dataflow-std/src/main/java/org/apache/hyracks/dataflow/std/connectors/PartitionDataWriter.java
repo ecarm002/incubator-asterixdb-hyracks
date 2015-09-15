@@ -50,14 +50,9 @@ public class PartitionDataWriter extends AbstractPartitionDataWriter {
         for (int i = 0; i < tupleCount; ++i) {
             tpc.partition(tupleAccessor, i, consumerPartitionCount, map);
             for (Integer h : map) {
-<<<<<<< HEAD
-            FrameUtils.appendToWriter(pWriters[h], appenders[h], tupleAccessor, i);
-=======
                 FrameUtils.appendToWriter(pWriters[h], appenders[h], tupleAccessor, i);
             }
             map.clear();
->>>>>>> Interval snapshot with range connectors working.
         }
-            map.clear();
     }
 }

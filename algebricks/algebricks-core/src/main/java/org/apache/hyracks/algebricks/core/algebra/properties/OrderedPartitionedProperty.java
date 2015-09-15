@@ -46,6 +46,7 @@ public class OrderedPartitionedProperty implements IPartitioningProperty {
         this.domain = domain;
         this.orderColumns = orderColumns;
         this.rangeMap = rangeMap;
+<<<<<<< HEAD
     }
 
     public OrderedPartitionedProperty(List<OrderColumn> orderColumns, INodeDomain domain, IRangeMap rangeMap) {
@@ -66,6 +67,8 @@ public class OrderedPartitionedProperty implements IPartitioningProperty {
         this.orderColumns = orderColumns;
         this.rangeMap = rangeMap;
 >>>>>>> Interval snapshot with range connectors working.
+=======
+>>>>>>> Interval work up to apache.
         this.rangeType = RangePartitioningType.PROJECT;
     }
 
