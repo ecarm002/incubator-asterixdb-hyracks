@@ -1,16 +1,20 @@
 /*
- * Copyright 2009-2013 by The Regents of the University of California
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * you may obtain a copy of the License from
- * 
- *     http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.apache.hyracks.dataflow.std.connectors;
 
@@ -45,14 +49,14 @@ public class MToNPartitionReplicateMergingConnectorDescriptor extends AbstractMT
     private final boolean stable;
 
     public MToNPartitionReplicateMergingConnectorDescriptor(IConnectorDescriptorRegistry spec,
-            ITuplePartitionReplicatorComputerFactory tprcf, int[] sortFields, IBinaryComparatorFactory[] comparatorFactories,
-            INormalizedKeyComputerFactory nkcFactory) {
+            ITuplePartitionReplicatorComputerFactory tprcf, int[] sortFields,
+            IBinaryComparatorFactory[] comparatorFactories, INormalizedKeyComputerFactory nkcFactory) {
         this(spec, tprcf, sortFields, comparatorFactories, nkcFactory, false);
     }
 
     public MToNPartitionReplicateMergingConnectorDescriptor(IConnectorDescriptorRegistry spec,
-            ITuplePartitionReplicatorComputerFactory tprcf, int[] sortFields, IBinaryComparatorFactory[] comparatorFactories,
-            INormalizedKeyComputerFactory nkcFactory, boolean stable) {
+            ITuplePartitionReplicatorComputerFactory tprcf, int[] sortFields,
+            IBinaryComparatorFactory[] comparatorFactories, INormalizedKeyComputerFactory nkcFactory, boolean stable) {
         super(spec);
         this.tprcf = tprcf;
         this.sortFields = sortFields;
@@ -64,15 +68,15 @@ public class MToNPartitionReplicateMergingConnectorDescriptor extends AbstractMT
     @Override
     public IFrameWriter createPartitioner(IHyracksTaskContext ctx, RecordDescriptor recordDesc,
             IPartitionWriterFactory edwFactory, int index, int nProducerPartitions, int nConsumerPartitions)
-            throws HyracksDataException {
-        final PartitionReplicateDataWriter rangeWriter = new PartitionReplicateDataWriter(ctx, nConsumerPartitions, edwFactory,
-                recordDesc, tprcf.createPartitioner());
+                    throws HyracksDataException {
+        final PartitionReplicateDataWriter rangeWriter = new PartitionReplicateDataWriter(ctx, nConsumerPartitions,
+                edwFactory, recordDesc, tprcf.createPartitioner());
         return rangeWriter;
     }
 
     @Override
-    public IPartitionCollector createPartitionCollector(IHyracksTaskContext ctx, RecordDescriptor recordDesc,
-            int index, int nProducerPartitions, int nConsumerPartitions) throws HyracksDataException {
+    public IPartitionCollector createPartitionCollector(IHyracksTaskContext ctx, RecordDescriptor recordDesc, int index,
+            int nProducerPartitions, int nConsumerPartitions) throws HyracksDataException {
         IBinaryComparator[] comparators = new IBinaryComparator[comparatorFactories.length];
         for (int i = 0; i < comparatorFactories.length; ++i) {
             comparators[i] = comparatorFactories[i].createBinaryComparator();
