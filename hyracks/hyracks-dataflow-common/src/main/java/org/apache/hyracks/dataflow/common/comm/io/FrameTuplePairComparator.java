@@ -18,6 +18,7 @@
  */
 package org.apache.hyracks.dataflow.common.comm.io;
 
+import org.apache.hyracks.api.comm.IFrameTupleAccessor;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparator;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
@@ -32,7 +33,7 @@ public class FrameTuplePairComparator {
         this.comparators = comparators;
     }
 
-    public int compare(FrameTupleAccessor accessor0, int tIndex0, FrameTupleAccessor accessor1, int tIndex1)
+    public int compare(IFrameTupleAccessor accessor0, int tIndex0, IFrameTupleAccessor accessor1, int tIndex1)
             throws HyracksDataException {
         int tStart0 = accessor0.getTupleStartOffset(tIndex0);
         int fStartOffset0 = accessor0.getFieldSlotsLength() + tStart0;

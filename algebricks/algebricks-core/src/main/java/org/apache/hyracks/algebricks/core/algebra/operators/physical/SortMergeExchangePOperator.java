@@ -80,7 +80,7 @@ public class SortMergeExchangePOperator extends AbstractExchangePOperator {
         for (int i = 1; i < sortColumns.length; i++) {
             sb.append(", " + sortColumns[i]);
         }
-        sb.append(" ]");
+        sb.append("]");
         return sb.toString();
     }
 
@@ -124,8 +124,8 @@ public class SortMergeExchangePOperator extends AbstractExchangePOperator {
             IPhysicalPropertiesVector reqdByParent) {
         List<ILocalStructuralProperty> localProps = new ArrayList<ILocalStructuralProperty>(sortColumns.length);
         localProps.add(new LocalOrderProperty(Arrays.asList(sortColumns)));
-        StructuralPropertiesVector[] r = new StructuralPropertiesVector[] { new StructuralPropertiesVector(null,
-                localProps) };
+        StructuralPropertiesVector[] r = new StructuralPropertiesVector[] {
+                new StructuralPropertiesVector(null, localProps) };
         return new PhysicalRequirements(r, IPartitioningRequirementsCoordinator.NO_COORDINATION);
     }
 

@@ -1,37 +1,33 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Copyright 2009-2013 by The Regents of the University of California
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * you may obtain a copy of the License from
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.hyracks.dataflow.common.data.partition.range;
 
 import org.apache.hyracks.api.comm.IFrameTupleAccessor;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparator;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
-import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputer;
-import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputerFactory;
+import org.apache.hyracks.api.dataflow.value.ITuplePartitionReplicatorComputer;
+import org.apache.hyracks.api.dataflow.value.ITuplePartitionReplicatorComputerFactory;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
-public class FieldRangePartitionComputerFactory implements ITuplePartitionComputerFactory {
+public class FieldRangePartitionReplicateComputerFactory implements ITuplePartitionReplicatorComputerFactory {
     private static final long serialVersionUID = 1L;
     private final int[] rangeFields;
     private IRangeMap rangeMap;
     private IBinaryComparatorFactory[] comparatorFactories;
 
-    public FieldRangePartitionComputerFactory(int[] rangeFields, IBinaryComparatorFactory[] comparatorFactories,
+    public FieldRangePartitionReplicateComputerFactory(int[] rangeFields, IBinaryComparatorFactory[] comparatorFactories,
             IRangeMap rangeMap) {
         this.rangeFields = rangeFields;
         this.comparatorFactories = comparatorFactories;
@@ -39,19 +35,19 @@ public class FieldRangePartitionComputerFactory implements ITuplePartitionComput
     }
 
     @Override
-    public ITuplePartitionComputer createPartitioner() {
+    public ITuplePartitionReplicatorComputer createPartitioner() {
         final IBinaryComparator[] comparators = new IBinaryComparator[comparatorFactories.length];
         for (int i = 0; i < comparatorFactories.length; ++i) {
             comparators[i] = comparatorFactories[i].createBinaryComparator();
         }
-        return new ITuplePartitionComputer() {
+        return new ITuplePartitionReplicatorComputer() {
             @Override
             /**
              * Determine the range partition. 
              */
-            public int partition(IFrameTupleAccessor accessor, int tIndex, int nParts) throws HyracksDataException {
+            public int[] partition(IFrameTupleAccessor accessor, int tIndex, int nParts) throws HyracksDataException {
                 if (nParts == 1) {
-                    return 0;
+                    return null;
                 }
                 int slotIndex = getRangePartition(accessor, tIndex);
                 // Map range partition to node partitions.
@@ -59,7 +55,8 @@ public class FieldRangePartitionComputerFactory implements ITuplePartitionComput
                 if (rangeMap.getSplitCount() + 1 > nParts) {
                     rangesPerPart = ((double) rangeMap.getSplitCount() + 1) / nParts;
                 }
-                return (int) Math.floor(slotIndex / rangesPerPart);
+//                return (int) Math.floor(slotIndex / rangesPerPart);
+                return null;
             }
 
             /*

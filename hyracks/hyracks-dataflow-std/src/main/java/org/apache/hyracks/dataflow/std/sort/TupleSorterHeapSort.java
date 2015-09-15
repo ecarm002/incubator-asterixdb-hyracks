@@ -124,8 +124,8 @@ public class TupleSorterHeapSort implements ITupleSorter {
             INormalizedKeyComputerFactory firstKeyNormalizerFactory, IBinaryComparatorFactory[] comparatorFactories)
             throws HyracksDataException {
         this.bufferManager = bufferManager;
-        this.bufferAccessor1 = bufferManager.getTupleAccessor();
-        this.bufferAccessor2 = bufferManager.getTupleAccessor();
+        this.bufferAccessor1 = bufferManager.getTupleBufferAccessor();
+        this.bufferAccessor2 = bufferManager.getTupleBufferAccessor();
         this.topK = topK;
         this.outputFrame = new VSizeFrame(ctx);
         this.outputAppender = new FrameTupleAppender();
@@ -253,9 +253,8 @@ public class TupleSorterHeapSort implements ITupleSorter {
         for (int i = 0; i < numEntries; i++) {
             HeapEntry minEntry = (HeapEntry) entries[i];
             bufferAccessor1.reset(minEntry.tuplePointer);
-            int flushed = FrameUtils
-                    .appendToWriter(writer, outputAppender, bufferAccessor1.getTupleBuffer().array(),
-                            bufferAccessor1.getTupleStartOffset(), bufferAccessor1.getTupleLength());
+            int flushed = FrameUtils.appendToWriter(writer, outputAppender, bufferAccessor1.getTupleBuffer().array(),
+                    bufferAccessor1.getTupleStartOffset(), bufferAccessor1.getTupleLength());
             if (flushed > 0) {
                 maxFrameSize = Math.max(maxFrameSize, flushed);
                 io++;
@@ -264,8 +263,7 @@ public class TupleSorterHeapSort implements ITupleSorter {
         maxFrameSize = Math.max(maxFrameSize, outputFrame.getFrameSize());
         outputAppender.flush(writer, true);
         if (LOGGER.isLoggable(Level.INFO)) {
-            LOGGER.info(
-                    "Flushed records:" + numEntries + "; Flushed through " + (io + 1) + " frames");
+            LOGGER.info("Flushed records:" + numEntries + "; Flushed through " + (io + 1) + " frames");
         }
         return maxFrameSize;
     }

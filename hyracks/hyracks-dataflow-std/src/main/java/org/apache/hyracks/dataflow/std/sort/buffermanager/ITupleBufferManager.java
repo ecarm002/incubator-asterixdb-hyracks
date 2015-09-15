@@ -42,5 +42,7 @@ public interface ITupleBufferManager {
 
     void close();
 
-    ITupleBufferAccessor getTupleAccessor();
+    ITupleBufferAccessor getTupleBufferAccessor();
+
+    IFrameTupleBufferAccessor getFrameTupleAccessor();
 }

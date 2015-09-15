@@ -177,7 +177,7 @@ public class PropertiesUtil {
 
     /**
      * Converts a list of OrderColumns to a list of LogicalVariables.
-     * 
+     *
      * @param orderColumns
      *            , a list of OrderColumns
      * @return the list of LogicalVariables
@@ -208,7 +208,7 @@ public class PropertiesUtil {
         return true;
     }
 
-    public static ArrayList<OrderColumn> applyFDsToOrderColumns(ArrayList<OrderColumn> orderColumns,
+    public static List<OrderColumn> applyFDsToOrderColumns(List<OrderColumn> orderColumns,
             List<FunctionalDependency> fds) {
         // the set of vars. is ordered
         // so we try the variables in order from last to first
@@ -235,7 +235,7 @@ public class PropertiesUtil {
         return norm;
     }
 
-    public static ArrayList<OrderColumn> replaceOrderColumnsByEqClasses(ArrayList<OrderColumn> orderColumns,
+    public static List<OrderColumn> replaceOrderColumnsByEqClasses(List<OrderColumn> orderColumns,
             Map<LogicalVariable, EquivalenceClass> equivalenceClasses) {
         if (equivalenceClasses == null || equivalenceClasses.isEmpty()) {
             return orderColumns;
@@ -256,7 +256,7 @@ public class PropertiesUtil {
         return norm;
     }
 
-    private static boolean impliedByPrefix(ArrayList<OrderColumn> vars, int i, FunctionalDependency fdep) {
+    private static boolean impliedByPrefix(List<OrderColumn> vars, int i, FunctionalDependency fdep) {
         if (!fdep.getTail().contains(vars.get(i).getColumn())) {
             return false;
         }

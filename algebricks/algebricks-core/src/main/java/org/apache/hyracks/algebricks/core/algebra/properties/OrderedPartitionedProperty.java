@@ -28,19 +28,19 @@ import org.apache.hyracks.algebricks.core.algebra.base.LogicalVariable;
 
 public class OrderedPartitionedProperty implements IPartitioningProperty {
 
-    private ArrayList<OrderColumn> orderColumns;
+    private List<OrderColumn> orderColumns;
     private INodeDomain domain;
 
-    public OrderedPartitionedProperty(ArrayList<OrderColumn> orderColumns, INodeDomain domain) {
+    public OrderedPartitionedProperty(List<OrderColumn> orderColumns, INodeDomain domain) {
         this.domain = domain;
         this.orderColumns = orderColumns;
     }
 
-    public ArrayList<OrderColumn> getOrderColumns() {
+    public List<OrderColumn> getOrderColumns() {
         return orderColumns;
     }
 
-    public ArrayList<LogicalVariable> getColumns() {
+    public List<LogicalVariable> getColumns() {
         ArrayList<LogicalVariable> cols = new ArrayList<LogicalVariable>(orderColumns.size());
         for (OrderColumn oc : orderColumns) {
             cols.add(oc.getColumn());

@@ -106,7 +106,7 @@ public class UnionAllOperatorDescriptor extends AbstractOperatorDescriptor {
                 @Override
                 public void fail() throws HyracksDataException {
                     synchronized (UnionOperator.this) {
-                        if (failed) {
+                        if (!failed) {
                             writer.fail();
                         }
                         failed = true;

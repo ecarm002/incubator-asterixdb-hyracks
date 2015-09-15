@@ -70,8 +70,7 @@ public class VariableTupleMemoryManager implements ITupleBufferManager {
     }
 
     @Override
-    public boolean insertTuple(IFrameTupleAccessor fta, int idx, TuplePointer tuplePointer)
-            throws HyracksDataException {
+    public boolean insertTuple(IFrameTupleAccessor fta, int idx, TuplePointer tuplePointer) throws HyracksDataException {
         int requiredFreeSpace = calculatePhysicalSpace(fta, idx);
         int frameId = findAvailableFrame(requiredFreeSpace);
         if (frameId < 0) {
@@ -165,7 +164,7 @@ public class VariableTupleMemoryManager implements ITupleBufferManager {
     }
 
     @Override
-    public ITupleBufferAccessor getTupleAccessor() {
+    public ITupleBufferAccessor getTupleBufferAccessor() {
         return new ITupleBufferAccessor() {
             private IAppendDeletableFrameTupleAccessor bufferAccessor = new DeletableFrameTupleAppender(
                     recordDescriptor);
@@ -200,6 +199,79 @@ public class VariableTupleMemoryManager implements ITupleBufferManager {
             @Override
             public int getFieldLength(int fieldId) {
                 return bufferAccessor.getFieldLength(tid, fieldId);
+            }
+        };
+    }
+
+    @Override
+    public IFrameTupleBufferAccessor getFrameTupleAccessor() {
+        return new IFrameTupleBufferAccessor() {
+            private IAppendDeletableFrameTupleAccessor bufferAccessor = new DeletableFrameTupleAppender(
+                    recordDescriptor);
+            private int tid;
+
+            @Override
+            public int getAbsoluteFieldStartOffset(int tupleIndex, int fieldId) {
+                return bufferAccessor.getAbsoluteFieldStartOffset(tid, fieldId);
+            }
+
+            @Override
+            public ByteBuffer getBuffer() {
+                return bufferAccessor.getBuffer();
+            }
+
+            @Override
+            public int getFieldCount() {
+                return bufferAccessor.getFieldCount();
+            }
+
+            @Override
+            public int getFieldEndOffset(int tupleIndex, int fieldId) {
+                return bufferAccessor.getFieldEndOffset(tid, fieldId);
+            }
+
+            @Override
+            public int getFieldLength(int tupleIndex, int fieldId) {
+                return bufferAccessor.getFieldLength(tid, fieldId);
+            }
+
+            @Override
+            public int getFieldSlotsLength() {
+                return bufferAccessor.getFieldSlotsLength();
+            }
+
+            @Override
+            public int getFieldStartOffset(int tupleIndex, int fieldId) {
+                return bufferAccessor.getFieldStartOffset(tid, fieldId);
+            }
+
+            @Override
+            public int getTupleCount() {
+                return 1;
+            }
+
+            @Override
+            public int getTupleEndOffset(int tupleIndex) {
+                return bufferAccessor.getTupleEndOffset(tid);
+            }
+
+            @Override
+            public int getTupleLength(int tupleIndex) {
+                return bufferAccessor.getTupleLength(tid);
+            }
+
+            @Override
+            public int getTupleStartOffset(int tupleIndex) {
+                return bufferAccessor.getTupleStartOffset(tid);
+            }
+
+            @Override
+            public void reset(ByteBuffer buffer) {
+            }
+
+            public void reset(TuplePointer tuplePointer) {
+                bufferAccessor.reset(frames.get(tuplePointer.frameIndex));
+                tid = tuplePointer.tupleIndex;
             }
         };
     }

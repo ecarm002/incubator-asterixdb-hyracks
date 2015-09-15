@@ -123,7 +123,7 @@ public class VariableTupleMemoryManagerTest {
     }
 
     private void assertEachTupleInFTAIsInBuffer(Map<Integer, Integer> map, Map<TuplePointer, Integer> mapInserted) {
-        ITupleBufferAccessor accessor = tupleMemoryManager.getTupleAccessor();
+        ITupleBufferAccessor accessor = tupleMemoryManager.getTupleBufferAccessor();
         for (Map.Entry<TuplePointer, Integer> entry : mapInserted.entrySet()) {
             accessor.reset(entry.getKey());
             int dataLength = map.get(entry.getValue());
@@ -207,8 +207,7 @@ public class VariableTupleMemoryManagerTest {
     }
 
     private ByteBuffer deleteRandomSelectedTuples(Map<Integer, Integer> map, Map<TuplePointer, Integer> mapInserted,
-            int minNumOfRecordTobeDeleted)
-            throws HyracksDataException {
+            int minNumOfRecordTobeDeleted) throws HyracksDataException {
         ByteBuffer buffer = ByteBuffer.allocate(Common.BUDGET);
         FixedSizeFrame frame = new FixedSizeFrame(buffer);
         FrameTupleAppender appender = new FrameTupleAppender();
@@ -217,7 +216,7 @@ public class VariableTupleMemoryManagerTest {
         assert (minNumOfRecordTobeDeleted < mapInserted.size());
         int countDeleted = minNumOfRecordTobeDeleted + random.nextInt(mapInserted.size() - minNumOfRecordTobeDeleted);
 
-        ITupleBufferAccessor accessor = tupleMemoryManager.getTupleAccessor();
+        ITupleBufferAccessor accessor = tupleMemoryManager.getTupleBufferAccessor();
         for (int i = 0; i < countDeleted; i++) {
             Iterator<Map.Entry<TuplePointer, Integer>> iter = mapInserted.entrySet().iterator();
             assert (iter.hasNext());
