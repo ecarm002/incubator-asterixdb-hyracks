@@ -35,11 +35,11 @@ import org.apache.hyracks.dataflow.common.data.partition.range.IRangePartitionTy
 import org.apache.hyracks.algebricks.core.algebra.properties.IPartitioningProperty.PartitioningType;
 
 public class OrderedPartitionedProperty implements IPartitioningProperty {
-
     private List<OrderColumn> orderColumns;
     private INodeDomain domain;
     private IRangeMap rangeMap;
     private RangePartitioningType rangeType;
+<<<<<<< HEAD
 
     public OrderedPartitionedProperty(List<OrderColumn> orderColumns, INodeDomain domain, IRangeMap rangeMap,
             RangePartitioningType rangeType) {
@@ -52,6 +52,20 @@ public class OrderedPartitionedProperty implements IPartitioningProperty {
         this.domain = domain;
         this.orderColumns = orderColumns;
         this.rangeMap = rangeMap;
+=======
+
+    public OrderedPartitionedProperty(List<OrderColumn> orderColumns, INodeDomain domain, IRangeMap rangeMap,
+            RangePartitioningType rangeType) {
+        this.domain = domain;
+        this.orderColumns = orderColumns;
+        this.rangeMap = rangeMap;
+    }
+
+    public OrderedPartitionedProperty(List<OrderColumn> orderColumns, INodeDomain domain, IRangeMap rangeMap) {
+        this.domain = domain;
+        this.orderColumns = orderColumns;
+        this.rangeMap = rangeMap;
+>>>>>>> Interval snapshot with range connectors working.
         this.rangeType = RangePartitioningType.PROJECT;
     }
 
