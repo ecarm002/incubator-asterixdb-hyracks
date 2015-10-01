@@ -18,9 +18,12 @@
  */
 package org.apache.hyracks.api.dataflow.value;
 
+import java.util.List;
+
 import org.apache.hyracks.api.comm.IFrameTupleAccessor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public interface ITuplePartitionComputer {
-    public int partition(IFrameTupleAccessor accessor, int tIndex, int nParts) throws HyracksDataException;
+    public void partition(IFrameTupleAccessor accessor, int tIndex, int nParts, List<Integer> map)
+            throws HyracksDataException;
 }

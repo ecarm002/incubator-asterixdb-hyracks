@@ -19,6 +19,7 @@
 package org.apache.hyracks.dataflow.std.connectors;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 
 import org.apache.hyracks.api.comm.IPartitionWriterFactory;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
@@ -29,11 +30,13 @@ import org.apache.hyracks.dataflow.common.comm.util.FrameUtils;
 
 public class PartitionDataWriter extends AbstractPartitionDataWriter {
     private final ITuplePartitionComputer tpc;
+    private final ArrayList<Integer> map;
 
     public PartitionDataWriter(IHyracksTaskContext ctx, int consumerPartitionCount, IPartitionWriterFactory pwFactory,
             RecordDescriptor recordDescriptor, ITuplePartitionComputer tpc) throws HyracksDataException {
-        super(ctx, consumerPartitionCount, pwFactory,recordDescriptor);
+        super(ctx, consumerPartitionCount, pwFactory, recordDescriptor);
         this.tpc = tpc;
+        this.map = new ArrayList<Integer>();
     }
 
     @Override
@@ -45,8 +48,11 @@ public class PartitionDataWriter extends AbstractPartitionDataWriter {
         tupleAccessor.reset(buffer);
         int tupleCount = tupleAccessor.getTupleCount();
         for (int i = 0; i < tupleCount; ++i) {
-            int h = tpc.partition(tupleAccessor, i, consumerPartitionCount);
-            FrameUtils.appendToWriter(pWriters[h], appenders[h], tupleAccessor, i);
+            tpc.partition(tupleAccessor, i, consumerPartitionCount, map);
+            for (Integer h : map) {
+                FrameUtils.appendToWriter(pWriters[h], appenders[h], tupleAccessor, i);
+            }
+            map.clear();
         }
     }
 }

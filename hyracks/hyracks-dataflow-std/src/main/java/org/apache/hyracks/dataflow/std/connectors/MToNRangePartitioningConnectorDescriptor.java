@@ -29,7 +29,7 @@ import org.apache.hyracks.api.dataflow.value.IBinaryComparator;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import org.apache.hyracks.api.dataflow.value.INormalizedKeyComputer;
 import org.apache.hyracks.api.dataflow.value.INormalizedKeyComputerFactory;
-import org.apache.hyracks.api.dataflow.value.ITuplePartitionReplicatorComputerFactory;
+import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputerFactory;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.IConnectorDescriptorRegistry;
@@ -39,26 +39,26 @@ import org.apache.hyracks.dataflow.std.collectors.NonDeterministicPartitionBatch
 import org.apache.hyracks.dataflow.std.collectors.PartitionCollector;
 import org.apache.hyracks.dataflow.std.collectors.SortMergeFrameReader;
 
-public class MToNPartitionReplicateMergingConnectorDescriptor extends AbstractMToNConnectorDescriptor {
+public class MToNRangePartitioningConnectorDescriptor extends AbstractMToNConnectorDescriptor {
     private static final long serialVersionUID = 1L;
 
-    private final ITuplePartitionReplicatorComputerFactory tprcf;
+    private final ITuplePartitionComputerFactory trpcf;
     private final int[] sortFields;
     private final IBinaryComparatorFactory[] comparatorFactories;
     private final INormalizedKeyComputerFactory nkcFactory;
     private final boolean stable;
 
-    public MToNPartitionReplicateMergingConnectorDescriptor(IConnectorDescriptorRegistry spec,
-            ITuplePartitionReplicatorComputerFactory tprcf, int[] sortFields,
-            IBinaryComparatorFactory[] comparatorFactories, INormalizedKeyComputerFactory nkcFactory) {
-        this(spec, tprcf, sortFields, comparatorFactories, nkcFactory, false);
+    public MToNRangePartitioningConnectorDescriptor(IConnectorDescriptorRegistry spec,
+            ITuplePartitionComputerFactory trpcf, int[] sortFields, IBinaryComparatorFactory[] comparatorFactories,
+            INormalizedKeyComputerFactory nkcFactory) {
+        this(spec, trpcf, sortFields, comparatorFactories, nkcFactory, false);
     }
 
-    public MToNPartitionReplicateMergingConnectorDescriptor(IConnectorDescriptorRegistry spec,
-            ITuplePartitionReplicatorComputerFactory tprcf, int[] sortFields,
-            IBinaryComparatorFactory[] comparatorFactories, INormalizedKeyComputerFactory nkcFactory, boolean stable) {
+    public MToNRangePartitioningConnectorDescriptor(IConnectorDescriptorRegistry spec,
+            ITuplePartitionComputerFactory trpcf, int[] sortFields, IBinaryComparatorFactory[] comparatorFactories,
+            INormalizedKeyComputerFactory nkcFactory, boolean stable) {
         super(spec);
-        this.tprcf = tprcf;
+        this.trpcf = trpcf;
         this.sortFields = sortFields;
         this.comparatorFactories = comparatorFactories;
         this.nkcFactory = nkcFactory;
@@ -69,8 +69,8 @@ public class MToNPartitionReplicateMergingConnectorDescriptor extends AbstractMT
     public IFrameWriter createPartitioner(IHyracksTaskContext ctx, RecordDescriptor recordDesc,
             IPartitionWriterFactory edwFactory, int index, int nProducerPartitions, int nConsumerPartitions)
                     throws HyracksDataException {
-        final PartitionReplicateDataWriter rangeWriter = new PartitionReplicateDataWriter(ctx, nConsumerPartitions,
-                edwFactory, recordDesc, tprcf.createPartitioner());
+        final PartitionRangeDataWriter rangeWriter = new PartitionRangeDataWriter(ctx, nConsumerPartitions, edwFactory,
+                recordDesc, trpcf.createPartitioner());
         return rangeWriter;
     }
 

@@ -16,10 +16,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.hyracks.api.dataflow.value;
+package org.apache.hyracks.dataflow.common.data.partition.range;
 
-import java.io.Serializable;
-
-public interface ITuplePartitionReplicatorComputerFamily extends Serializable {
-    public ITuplePartitionReplicatorComputer createPartitioner(int seed);
+public interface IRangePartitionType {
+    public enum RangePartitioningType {
+        /**
+         * Partitioning is determined by finding the range partition where the first data point lies.
+         */
+        PROJECT,
+        /**
+         * Partitioning is determined by finding all the range partitions where the data has a point.
+         */
+        SPLIT,
+        /**
+         * Partitioning is determined by finding all the range partitions where the data has a point
+         * or comes after the data point.
+         */
+        REPLICATE
+    }
 }

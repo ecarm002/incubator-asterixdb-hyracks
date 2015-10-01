@@ -55,9 +55,8 @@ public class PropertiesUtil {
         return k;
     }
 
-    public static boolean matchLocalProperties(List<ILocalStructuralProperty> reqd,
-            List<ILocalStructuralProperty> dlvd, Map<LogicalVariable, EquivalenceClass> equivalenceClasses,
-            List<FunctionalDependency> fds) {
+    public static boolean matchLocalProperties(List<ILocalStructuralProperty> reqd, List<ILocalStructuralProperty> dlvd,
+            Map<LogicalVariable, EquivalenceClass> equivalenceClasses, List<FunctionalDependency> fds) {
         if (reqd == null) {
             return true;
         }

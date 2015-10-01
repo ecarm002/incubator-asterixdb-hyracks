@@ -43,6 +43,7 @@ import org.apache.hyracks.dataflow.common.io.RunFileReader;
 import org.apache.hyracks.dataflow.common.io.RunFileWriter;
 import org.apache.hyracks.dataflow.std.structures.ISerializableTable;
 import org.apache.hyracks.dataflow.std.structures.SerializableHashTable;
+import org.apache.hyracks.dataflow.std.util.PartitionUtil;
 
 /**
  * @author pouria
@@ -69,6 +70,8 @@ public class OptimizedHybridHashJoin {
 
     private ITuplePartitionComputer buildHpc;
     private ITuplePartitionComputer probeHpc;
+    private final PartitionUtil puBuild;
+    private final PartitionUtil puProbe;
 
     private final RecordDescriptor buildRd;
     private final RecordDescriptor probeRd;
@@ -120,6 +123,8 @@ public class OptimizedHybridHashJoin {
         this.probeRd = probeRd;
         this.buildHpc = buildHpc;
         this.probeHpc = probeHpc;
+        this.puBuild = new PartitionUtil(buildHpc, numOfPartitions);
+        this.puProbe = new PartitionUtil(probeHpc, numOfPartitions);
         this.buildKeys = keys1;
         this.probeKeys = keys0;
         this.comparators = comparators;
@@ -150,6 +155,8 @@ public class OptimizedHybridHashJoin {
         this.probeRd = probeRd;
         this.buildHpc = buildHpc;
         this.probeHpc = probeHpc;
+        this.puBuild = new PartitionUtil(buildHpc, numOfPartitions);
+        this.puProbe = new PartitionUtil(probeHpc, numOfPartitions);
         this.buildKeys = keys1;
         this.probeKeys = keys0;
         this.comparators = comparators;
@@ -211,7 +218,7 @@ public class OptimizedHybridHashJoin {
         }
 
         for (int i = 0; i < tupleCount; ++i) {
-            int pid = buildHpc.partition(accessorBuild, i, numOfPartitions);
+            int pid = puBuild.hashPartitionKey(accessorBuild, i);
             processTuple(i, pid);
             buildPSizeInTups[pid]++;
         }
@@ -521,7 +528,7 @@ public class OptimizedHybridHashJoin {
             return;
         }
         for (int i = 0; i < tupleCount; ++i) {
-            int pid = probeHpc.partition(accessorProbe, i, numOfPartitions);
+            int pid = puProbe.hashPartitionKey(accessorProbe, i);
 
             if (buildPSizeInTups[pid] > 0 || isLeftOuter) { //Tuple has potential match from previous phase
                 if (pStatus.get(pid)) { //pid is Spilled

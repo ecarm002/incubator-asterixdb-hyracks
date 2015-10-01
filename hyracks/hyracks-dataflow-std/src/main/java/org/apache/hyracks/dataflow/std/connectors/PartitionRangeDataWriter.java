@@ -19,22 +19,25 @@
 package org.apache.hyracks.dataflow.std.connectors;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 
 import org.apache.hyracks.api.comm.IPartitionWriterFactory;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
-import org.apache.hyracks.api.dataflow.value.ITuplePartitionReplicatorComputer;
+import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputer;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.common.comm.util.FrameUtils;
 
-public class PartitionReplicateDataWriter extends AbstractPartitionDataWriter {
-    private final ITuplePartitionReplicatorComputer tprc;
+public class PartitionRangeDataWriter extends AbstractPartitionDataWriter {
+    private final ITuplePartitionComputer tpc;
+    private final ArrayList<Integer> map;
 
-    public PartitionReplicateDataWriter(IHyracksTaskContext ctx, int consumerPartitionCount,
-            IPartitionWriterFactory pwFactory, RecordDescriptor recordDescriptor,
-            ITuplePartitionReplicatorComputer tprc) throws HyracksDataException {
+    public PartitionRangeDataWriter(IHyracksTaskContext ctx, int consumerPartitionCount,
+            IPartitionWriterFactory pwFactory, RecordDescriptor recordDescriptor, ITuplePartitionComputer tpc)
+                    throws HyracksDataException {
         super(ctx, consumerPartitionCount, pwFactory, recordDescriptor);
-        this.tprc = tprc;
+        this.tpc = tpc;
+        this.map = new ArrayList<Integer>();
     }
 
     @Override
@@ -46,10 +49,11 @@ public class PartitionReplicateDataWriter extends AbstractPartitionDataWriter {
         tupleAccessor.reset(buffer);
         int tupleCount = tupleAccessor.getTupleCount();
         for (int i = 0; i < tupleCount; ++i) {
-            int[] h = tprc.partition(tupleAccessor, i, consumerPartitionCount);
-            for (int j = 0; j < h.length; ++j) {
-                FrameUtils.appendToWriter(pWriters[h[j]], appenders[h[j]], tupleAccessor, i);
+            tpc.partition(tupleAccessor, i, consumerPartitionCount, map);
+            for (Integer h : map) {
+                FrameUtils.appendToWriter(pWriters[h], appenders[h], tupleAccessor, i);
             }
+            map.clear();
         }
     }
 }

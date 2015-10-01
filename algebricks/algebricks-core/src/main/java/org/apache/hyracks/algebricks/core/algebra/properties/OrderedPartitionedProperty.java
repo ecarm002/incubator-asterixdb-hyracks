@@ -25,15 +25,33 @@ import java.util.Map;
 
 import org.apache.hyracks.algebricks.core.algebra.base.EquivalenceClass;
 import org.apache.hyracks.algebricks.core.algebra.base.LogicalVariable;
+import org.apache.hyracks.algebricks.core.algebra.properties.FunctionalDependency;
+import org.apache.hyracks.algebricks.core.algebra.properties.INodeDomain;
+import org.apache.hyracks.algebricks.core.algebra.properties.IPartitioningProperty;
+import org.apache.hyracks.algebricks.core.algebra.properties.OrderColumn;
+import org.apache.hyracks.algebricks.core.algebra.properties.PropertiesUtil;
+import org.apache.hyracks.dataflow.common.data.partition.range.IRangeMap;
+import org.apache.hyracks.dataflow.common.data.partition.range.IRangePartitionType.RangePartitioningType;
+import org.apache.hyracks.algebricks.core.algebra.properties.IPartitioningProperty.PartitioningType;
 
 public class OrderedPartitionedProperty implements IPartitioningProperty {
-
     private List<OrderColumn> orderColumns;
     private INodeDomain domain;
+    private IRangeMap rangeMap;
+    private RangePartitioningType rangeType;
 
-    public OrderedPartitionedProperty(List<OrderColumn> orderColumns, INodeDomain domain) {
+    public OrderedPartitionedProperty(List<OrderColumn> orderColumns, INodeDomain domain, IRangeMap rangeMap,
+            RangePartitioningType rangeType) {
         this.domain = domain;
         this.orderColumns = orderColumns;
+        this.rangeMap = rangeMap;
+    }
+
+    public OrderedPartitionedProperty(List<OrderColumn> orderColumns, INodeDomain domain, IRangeMap rangeMap) {
+        this.domain = domain;
+        this.orderColumns = orderColumns;
+        this.rangeMap = rangeMap;
+        this.rangeType = RangePartitioningType.PROJECT;
     }
 
     public List<OrderColumn> getOrderColumns() {
@@ -53,9 +71,13 @@ public class OrderedPartitionedProperty implements IPartitioningProperty {
         return PartitioningType.ORDERED_PARTITIONED;
     }
 
+    public RangePartitioningType getRangePartitioningType() {
+        return rangeType;
+    }
+
     @Override
     public String toString() {
-        return getPartitioningType().toString() + orderColumns;
+        return getPartitioningType().toString() + " Column(s): " + orderColumns + " Range Type: " + rangeType;
     }
 
     @Override
@@ -69,6 +91,10 @@ public class OrderedPartitionedProperty implements IPartitioningProperty {
         for (OrderColumn oc : orderColumns) {
             columns.add(oc.getColumn());
         }
+    }
+
+    public IRangeMap getRangeMap() {
+        return rangeMap;
     }
 
     @Override

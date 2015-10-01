@@ -19,6 +19,7 @@
 package org.apache.hyracks.dataflow.hadoop.data;
 
 import java.io.DataInputStream;
+import java.util.List;
 
 import org.apache.hadoop.io.Writable;
 
@@ -44,7 +45,8 @@ public class HadoopHashTuplePartitionComputerFactory<K extends Writable> impleme
             private final DataInputStream dis = new DataInputStream(bbis);
 
             @Override
-            public int partition(IFrameTupleAccessor accessor, int tIndex, int nParts) throws HyracksDataException {
+            public void partition(IFrameTupleAccessor accessor, int tIndex, int nParts, List<Integer> map)
+                    throws HyracksDataException {
                 int keyStart = accessor.getTupleStartOffset(tIndex) + accessor.getFieldSlotsLength()
                         + accessor.getFieldStartOffset(tIndex, 0);
                 bbis.setByteBuffer(accessor.getBuffer(), keyStart);
@@ -53,7 +55,7 @@ public class HadoopHashTuplePartitionComputerFactory<K extends Writable> impleme
                 if (h < 0) {
                     h = -h;
                 }
-                return h % nParts;
+                map.add(h % nParts);
             }
         };
     }

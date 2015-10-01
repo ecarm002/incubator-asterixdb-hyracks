@@ -170,6 +170,7 @@
            <exclude>**/ClusterControllerService/**</exclude>
            <exclude>**/target/**</exclude>
            <exclude>**/output/**</exclude>
+           <exclude>**/bin/**</exclude>
            <exclude>**/*.iml</exclude>
       </excludes>
         </configuration>

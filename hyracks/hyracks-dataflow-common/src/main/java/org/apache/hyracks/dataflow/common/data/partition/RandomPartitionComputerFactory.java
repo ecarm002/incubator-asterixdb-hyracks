@@ -18,6 +18,7 @@
  */
 package org.apache.hyracks.dataflow.common.data.partition;
 
+import java.util.List;
 import java.util.Random;
 
 import org.apache.hyracks.api.comm.IFrameTupleAccessor;
@@ -25,29 +26,28 @@ import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputer;
 import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputerFactory;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
-public class RandomPartitionComputerFactory implements
-		ITuplePartitionComputerFactory {
+public class RandomPartitionComputerFactory implements ITuplePartitionComputerFactory {
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	private final int domainCardinality;
+    private final int domainCardinality;
 
-	public RandomPartitionComputerFactory(int domainCardinality) {
-		this.domainCardinality = domainCardinality;
-	}
+    public RandomPartitionComputerFactory(int domainCardinality) {
+        this.domainCardinality = domainCardinality;
+    }
 
-	@Override
-	public ITuplePartitionComputer createPartitioner() {
-		return new ITuplePartitionComputer() {
+    @Override
+    public ITuplePartitionComputer createPartitioner() {
+        return new ITuplePartitionComputer() {
 
-			private final Random random = new Random();
+            private final Random random = new Random();
 
-			@Override
-			public int partition(IFrameTupleAccessor accessor, int tIndex,
-					int nParts) throws HyracksDataException {
-				return random.nextInt(domainCardinality);
-			}
-		};
-	}
+            @Override
+            public void partition(IFrameTupleAccessor accessor, int tIndex, int nParts, List<Integer> map)
+                    throws HyracksDataException {
+                map.add(random.nextInt(domainCardinality));
+            }
+        };
+    }
 
 }

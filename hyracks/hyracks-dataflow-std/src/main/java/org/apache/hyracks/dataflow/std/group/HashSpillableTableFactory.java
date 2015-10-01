@@ -41,6 +41,7 @@ import org.apache.hyracks.dataflow.common.comm.io.FrameTuplePairComparator;
 import org.apache.hyracks.dataflow.std.structures.ISerializableTable;
 import org.apache.hyracks.dataflow.std.structures.SerializableHashTable;
 import org.apache.hyracks.dataflow.std.structures.TuplePointer;
+import org.apache.hyracks.dataflow.std.util.PartitionUtil;
 
 public class HashSpillableTableFactory implements ISpillableTableFactory {
 
@@ -92,10 +93,10 @@ public class HashSpillableTableFactory implements ISpillableTableFactory {
 
         final FrameTuplePairComparator ftpcTuple = new FrameTuplePairComparator(storedKeys, storedKeys, comparators);
 
-        final ITuplePartitionComputer tpc = tpcf.createPartitioner();
+        final PartitionUtil pu = new PartitionUtil(tpcf.createPartitioner(), tableSize);
 
-        final INormalizedKeyComputer nkc = firstKeyNormalizerFactory == null ? null : firstKeyNormalizerFactory
-                .createNormalizedKeyComputer();
+        final INormalizedKeyComputer nkc = firstKeyNormalizerFactory == null ? null
+                : firstKeyNormalizerFactory.createNormalizedKeyComputer();
 
         int[] keyFieldsInPartialResults = new int[keyFields.length];
         for (int i = 0; i < keyFieldsInPartialResults.length; i++) {
@@ -160,8 +161,9 @@ public class HashSpillableTableFactory implements ISpillableTableFactory {
                         int f0StartRel = storedKeysAccessor1.getFieldStartOffset(tIndex, sfIdx);
                         int f0EndRel = storedKeysAccessor1.getFieldEndOffset(tIndex, sfIdx);
                         int f0Start = f0StartRel + tStart + storedKeysAccessor1.getFieldSlotsLength();
-                        tPointers[ptr * 3 + 2] = nkc == null ? 0 : nkc.normalize(storedKeysAccessor1.getBuffer()
-                                .array(), f0Start, f0EndRel - f0StartRel);
+                        tPointers[ptr * 3 + 2] = nkc == null ? 0
+                                : nkc.normalize(storedKeysAccessor1.getBuffer().array(), f0Start,
+                                        f0EndRel - f0StartRel);
                         ptr++;
                         offset++;
                     } while (true);
@@ -186,7 +188,7 @@ public class HashSpillableTableFactory implements ISpillableTableFactory {
             public boolean insert(FrameTupleAccessor accessor, int tIndex) throws HyracksDataException {
                 if (lastBufIndex < 0)
                     nextAvailableFrame();
-                int entry = tpc.partition(accessor, tIndex, tableSize);
+                int entry = pu.hashPartitionKey(accessor, tIndex);
                 boolean foundGroup = false;
                 int offset = 0;
                 do {
