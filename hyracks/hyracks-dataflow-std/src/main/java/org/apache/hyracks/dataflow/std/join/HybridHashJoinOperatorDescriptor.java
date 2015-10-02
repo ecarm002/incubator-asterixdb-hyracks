@@ -211,9 +211,8 @@ public class HybridHashJoinOperatorDescriptor extends AbstractOperatorDescriptor
                 private final FrameTupleAccessor accessorBuild = new FrameTupleAccessor(rd1);
                 private final ITuplePartitionComputer hpcBuild = new FieldHashPartitionComputerFactory(keys1,
                         hashFunctionFactories).createPartitioner();
-                private final PartitionUtil puBuildMemory = new PartitionUtil(hpcBuild, state.nPartitions);
-                private final PartitionUtil puBuildAlternate = new PartitionUtil(hpcBuild,
-                        (int) (inputsize0 * factor / nPartitions));
+                private PartitionUtil puBuildMemory;
+                private PartitionUtil puBuildAlternate;
                 private final FrameTupleAppender appender = new FrameTupleAppender();
                 private final FrameTupleAppender ftappender = new FrameTupleAppender();
                 private IFrame[] bufferForPartitions;
@@ -340,6 +339,9 @@ public class HybridHashJoinOperatorDescriptor extends AbstractOperatorDescriptor
                     }
 
                     ftappender.reset(inBuffer, true);
+
+                    puBuildMemory = new PartitionUtil(hpcBuild, state.nPartitions);
+                    puBuildAlternate = new PartitionUtil(hpcBuild, (int) (inputsize0 * factor / nPartitions));
                 }
 
                 @Override
@@ -406,9 +408,8 @@ public class HybridHashJoinOperatorDescriptor extends AbstractOperatorDescriptor
                 private final ITuplePartitionComputerFactory hpcf1 = new FieldHashPartitionComputerFactory(keys1,
                         hashFunctionFactories);
                 private final ITuplePartitionComputer hpcProbe = hpcf0.createPartitioner();
-                private final PartitionUtil puProbeMemory = new PartitionUtil(hpcProbe, state.nPartitions);
-                private final PartitionUtil puProbeAlternate = new PartitionUtil(hpcProbe,
-                        (int) (inputsize0 * factor / nPartitions));
+                private PartitionUtil puProbeMemory;
+                private PartitionUtil puProbeAlternate;
                 private final FrameTupleAppender appender = new FrameTupleAppender();
                 private final FrameTupleAppender ftap = new FrameTupleAppender();
                 private final IFrame inBuffer = new VSizeFrame(ctx);
@@ -430,6 +431,9 @@ public class HybridHashJoinOperatorDescriptor extends AbstractOperatorDescriptor
                     }
                     appender.reset(outBuffer, true);
                     ftap.reset(inBuffer, true);
+
+                    puProbeMemory = new PartitionUtil(hpcProbe, state.nPartitions);
+                    puProbeAlternate = new PartitionUtil(hpcProbe, (int) (inputsize0 * factor / nPartitions));
                 }
 
                 @Override
