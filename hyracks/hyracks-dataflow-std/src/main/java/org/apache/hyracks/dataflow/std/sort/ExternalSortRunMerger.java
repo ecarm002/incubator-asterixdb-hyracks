@@ -195,8 +195,8 @@ public class ExternalSortRunMerger {
         return budget;
     }
 
-    private void prepareFrames(int extraFreeMem, List<GroupVSizeFrame> inFrames, List<RunAndMaxFrameSizePair> patialRuns)
-            throws HyracksDataException {
+    private void prepareFrames(int extraFreeMem, List<GroupVSizeFrame> inFrames,
+            List<RunAndMaxFrameSizePair> patialRuns) throws HyracksDataException {
         if (extraFreeMem > 0 && patialRuns.size() > 1) {
             int extraFrames = extraFreeMem / ctx.getInitialFrameSize();
             int avg = (extraFrames / patialRuns.size()) * ctx.getInitialFrameSize();
