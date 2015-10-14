@@ -19,6 +19,7 @@
 package org.apache.hyracks.algebricks.core.algebra.operators.physical;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
@@ -36,7 +37,9 @@ import org.apache.hyracks.algebricks.core.algebra.properties.ILocalStructuralPro
 import org.apache.hyracks.algebricks.core.algebra.properties.ILocalStructuralProperty.PropertyType;
 import org.apache.hyracks.algebricks.core.algebra.properties.INodeDomain;
 import org.apache.hyracks.algebricks.core.algebra.properties.IPartitioningProperty;
+import org.apache.hyracks.algebricks.core.algebra.properties.IPartitioningRequirementsCoordinator;
 import org.apache.hyracks.algebricks.core.algebra.properties.IPhysicalPropertiesVector;
+import org.apache.hyracks.algebricks.core.algebra.properties.LocalOrderProperty;
 import org.apache.hyracks.algebricks.core.algebra.properties.OrderColumn;
 import org.apache.hyracks.algebricks.core.algebra.properties.OrderedPartitionedProperty;
 import org.apache.hyracks.algebricks.core.algebra.properties.PhysicalRequirements;
@@ -52,16 +55,16 @@ import org.apache.hyracks.api.job.IConnectorDescriptorRegistry;
 import org.apache.hyracks.dataflow.common.data.partition.range.FieldRangePartitionComputerFactory;
 import org.apache.hyracks.dataflow.common.data.partition.range.IRangeMap;
 import org.apache.hyracks.dataflow.common.data.partition.range.IRangePartitionType.RangePartitioningType;
-import org.apache.hyracks.dataflow.std.connectors.MToNPartitioningConnectorDescriptor;
+import org.apache.hyracks.dataflow.std.connectors.MToNPartitioningMergingConnectorDescriptor;
 
-public class RangePartitionPOperator extends AbstractExchangePOperator {
+public class RangePartitionMergeExchangePOperator extends AbstractExchangePOperator {
 
     private List<OrderColumn> partitioningFields;
     private INodeDomain domain;
     private IRangeMap rangeMap;
     private RangePartitioningType rangeType;
 
-    public RangePartitionPOperator(List<OrderColumn> partitioningFields, INodeDomain domain, IRangeMap rangeMap,
+    public RangePartitionMergeExchangePOperator(List<OrderColumn> partitioningFields, INodeDomain domain, IRangeMap rangeMap,
             RangePartitioningType rangeType) {
         this.partitioningFields = partitioningFields;
         this.domain = domain;
@@ -71,7 +74,7 @@ public class RangePartitionPOperator extends AbstractExchangePOperator {
 
     @Override
     public PhysicalOperatorTag getOperatorTag() {
-        return PhysicalOperatorTag.RANGE_PARTITION_EXCHANGE;
+        return PhysicalOperatorTag.RANGE_PARTITION_MERGE_EXCHANGE;
     }
 
     public List<OrderColumn> getPartitioningFields() {
@@ -84,8 +87,7 @@ public class RangePartitionPOperator extends AbstractExchangePOperator {
 
     @Override
     public void computeDeliveredProperties(ILogicalOperator op, IOptimizationContext context) {
-        IPartitioningProperty p = new OrderedPartitionedProperty(new ArrayList<OrderColumn>(partitioningFields), domain,
-                rangeMap, rangeType);
+        IPartitioningProperty p = new OrderedPartitionedProperty(partitioningFields, domain, rangeMap, rangeType);
         AbstractLogicalOperator op2 = (AbstractLogicalOperator) op.getInputs().get(0).getValue();
         List<ILocalStructuralProperty> op2Locals = op2.getDeliveredPhysicalProperties().getLocalProperties();
         List<ILocalStructuralProperty> locals = new ArrayList<ILocalStructuralProperty>();
@@ -102,7 +104,17 @@ public class RangePartitionPOperator extends AbstractExchangePOperator {
     @Override
     public PhysicalRequirements getRequiredPropertiesForChildren(ILogicalOperator op,
             IPhysicalPropertiesVector reqdByParent) {
-        return emptyUnaryRequirements();
+        List<ILocalStructuralProperty> orderProps = new LinkedList<ILocalStructuralProperty>();
+        List<OrderColumn> columns = new ArrayList<OrderColumn>();
+        for (OrderColumn oc : partitioningFields) {
+            LogicalVariable var = oc.getColumn();
+            columns.add(new OrderColumn(var, oc.getOrder()));
+        }
+        orderProps.add(new LocalOrderProperty(columns));
+        OrderedPartitionedProperty orderedPP = new OrderedPartitionedProperty(partitioningFields, domain);
+        StructuralPropertiesVector[] r = new StructuralPropertiesVector[] { new StructuralPropertiesVector(orderedPP,
+                orderProps) };
+        return new PhysicalRequirements(r, IPartitioningRequirementsCoordinator.NO_COORDINATION);
     }
 
     @Override
@@ -131,7 +143,7 @@ public class RangePartitionPOperator extends AbstractExchangePOperator {
         }
         ITuplePartitionComputerFactory tpcf = new FieldRangePartitionComputerFactory(sortFields, comps, rangeMap,
                 rangeType);
-        IConnectorDescriptor conn = new MToNPartitioningConnectorDescriptor(spec, tpcf);
+        IConnectorDescriptor conn = new MToNPartitioningMergingConnectorDescriptor(spec, tpcf, sortFields, comps, nkcf);
         return new Pair<IConnectorDescriptor, TargetConstraint>(conn, null);
     }
 

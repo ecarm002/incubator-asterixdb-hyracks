@@ -47,6 +47,15 @@ import org.apache.hyracks.dataflow.std.sort.buffermanager.VariableFramePool;
 import org.apache.hyracks.dataflow.std.sort.buffermanager.VariableTupleMemoryManager;
 import org.apache.hyracks.dataflow.std.structures.TuplePointer;
 
+/**
+ * Merge Joiner takes two sorted streams of input and joins.
+ * The two sorted streams must be in a logical order and the comparator must
+ * support keeping that order so the join will work.
+ * The left stream will spill to disk when memory is full.
+ * The right stream spills to memory and pause when memory is full.
+ *
+ * @author prestonc
+ */
 public class MergeJoiner {
 
     private static final int MEMORY_INDEX = -1;
@@ -57,55 +66,55 @@ public class MergeJoiner {
     private MergeJoinLocks locks;
     private MergeStatus status;
 
-    private final IFrameWriter writer;
-
     private ByteBuffer leftBuffer;
     private ByteBuffer rightBuffer;
-    private int leftTupleIndex;
-    private int rightRunFileTupleIndex;
+    private int leftBufferTupleIndex;
+    private int leftRunFileTupleIndex;
     private int rightBufferTupleIndex;
 
-    private final ITupleBufferManager bufferManager;
+    private final TuplePointer tp;
     private final List<TuplePointer> memoryTuples;
-    private final IFrameTupleBufferAccessor memoryAccessor;
+    private final IFramePool framePool;
+    private ITupleBufferManager bufferManager;
+    private IFrameTupleBufferAccessor memoryAccessor;
 
     private final IFrame runFileBuffer;
     private final FrameTupleAppender runFileAppender;
     private final RunFileWriter runFileWriter;
     private RunFileReader runFileReader;
-    private IFrameTupleAccessor runFileAccessor;
 
     private final FrameTupleAppender resultAppender;
 
-    private final FrameTuplePairComparator comparator;
+    private final IMergeJoinChecker mjc;
 
     private final int partition;
 
     public MergeJoiner(IHyracksTaskContext ctx, int memorySize, int partition, MergeStatus status, MergeJoinLocks locks,
-            FrameTuplePairComparator comparator, IFrameWriter writer, RecordDescriptor leftRd)
-                    throws HyracksDataException {
+            IMergeJoinChecker mjc, RecordDescriptor leftRd) throws HyracksDataException {
         this.partition = partition;
         this.status = status;
         this.locks = locks;
-        this.writer = writer;
-        this.comparator = comparator;
+        this.mjc = mjc;
 
         accessorLeft = new FrameTupleAccessor(leftRd);
-
-        // Memory
-        IFramePool framePool = new VariableFramePool(ctx, (memorySize - 1) * ctx.getInitialFrameSize());
-        bufferManager = new VariableTupleMemoryManager(framePool, leftRd);
-        memoryTuples = new ArrayList<TuplePointer>();
-        memoryAccessor = bufferManager.getFrameTupleAccessor();
+        leftBuffer = ctx.allocateFrame();
+        rightBuffer = ctx.allocateFrame();
+        leftBufferTupleIndex = -1;
         rightBufferTupleIndex = -1;
 
-        // Run File and frame cache
+        // Memory (right buffer)
+        framePool = new VariableFramePool(ctx, (memorySize - 1) * ctx.getInitialFrameSize());
+        memoryTuples = new ArrayList<TuplePointer>();
+        tp = new TuplePointer();
+
+        // Run File and frame cache (left buffer)
         FileReference file = ctx.getJobletContext()
                 .createManagedWorkspaceFile(this.getClass().getSimpleName() + this.toString());
         runFileWriter = new RunFileWriter(file, ctx.getIOManager());
         runFileWriter.open();
         runFileBuffer = new FixedSizeFrame(ctx.allocateFrame(ctx.getInitialFrameSize()));
         runFileAppender = new FrameTupleAppender(new VSizeFrame(ctx));
+        leftRunFileTupleIndex = -1;
 
         // Result
         resultAppender = new FrameTupleAppender(new VSizeFrame(ctx));
@@ -120,9 +129,13 @@ public class MergeJoiner {
         return false;
     }
 
-    private void addToResult(IFrameTupleAccessor accessor1, int index1, IFrameTupleAccessor accessor2, int index2)
-            throws HyracksDataException {
+    private void addToResult(IFrameTupleAccessor accessor1, int index1, IFrameTupleAccessor accessor2, int index2,
+            IFrameWriter writer) throws HyracksDataException {
         FrameUtils.appendConcatToWriter(writer, resultAppender, accessor1, index1, accessor2, index2);
+    }
+
+    public void closeResult(IFrameWriter writer) throws HyracksDataException {
+        resultAppender.flush(writer, true);
     }
 
     private void addToRunFile(IFrameTupleAccessor accessor, int idx) throws HyracksDataException {
@@ -132,22 +145,23 @@ public class MergeJoiner {
         }
     }
 
-    private void openFromRunFile() throws HyracksDataException {
+    private void openRunFile() throws HyracksDataException {
         status.runFileStatus = RunFileStatus.READING;
 
         // Create reader
         runFileReader = runFileWriter.createReader();
         runFileReader.open();
-        rightRunFileTupleIndex = 0;
+        leftRunFileTupleIndex = 0;
 
         // Load first frame
         runFileReader.nextFrame(runFileBuffer);
-        accessorRight.reset(runFileBuffer.getBuffer());
+        accessorLeft.reset(runFileBuffer.getBuffer());
     }
 
-    private void closeFromRunFile() throws HyracksDataException {
+    private void closeRunFile() throws HyracksDataException {
         status.runFileStatus = RunFileStatus.NOT_USED;
         runFileReader.close();
+        accessorLeft.reset(leftBuffer);
     }
 
     private void flushMemory() throws HyracksDataException {
@@ -155,24 +169,12 @@ public class MergeJoiner {
         memoryTuples.clear();
     }
 
-    private void incrementLeftTuple() {
-        leftTupleIndex++;
-    }
-
     private int getRightTupleIndex() throws HyracksDataException {
-        if (status.runFileStatus == RunFileStatus.READING) {
-            return rightRunFileTupleIndex;
-        } else {
-            return rightBufferTupleIndex;
-        }
+        return rightBufferTupleIndex;
     }
 
     private void incrementRightTuple() throws HyracksDataException {
-        if (status.runFileStatus == RunFileStatus.READING) {
-            ++rightRunFileTupleIndex;
-        } else {
-            rightBufferTupleIndex++;
-        }
+        ++rightBufferTupleIndex;
     }
 
     /**
@@ -182,33 +184,62 @@ public class MergeJoiner {
      */
     private boolean loadRightTuple() throws HyracksDataException {
         boolean loaded = true;
+        if ((rightBufferTupleIndex == -1 || rightBufferTupleIndex >= accessorRight.getTupleCount())
+                && status.rightHasMore == true) {
+            status.loadRightFrame = true;
+            locks.getRight(partition).signal();
+            try {
+                while (status.loadRightFrame && status.getRightStatus().isEqualOrBefore(BranchStatus.DATA_PROCESSING)) {
+                    locks.getLeft(partition).await();
+                }
+            } catch (InterruptedException e) {
+                throw new HyracksDataException(
+                        "SortMergeIntervalJoin interrupted exception while attempting to load right tuple", e);
+            }
+            loaded = (rightBufferTupleIndex == 0);
+            if (!loaded) {
+                status.rightHasMore = false;
+            }
+        }
+        return loaded;
+    }
+
+    private int getLeftTupleIndex() throws HyracksDataException {
         if (status.runFileStatus == RunFileStatus.READING) {
-            if (rightRunFileTupleIndex >= accessorRight.getTupleCount()) {
+            return leftRunFileTupleIndex;
+        } else {
+            return leftBufferTupleIndex;
+        }
+    }
+
+    private void incrementLeftTuple() throws HyracksDataException {
+        if (status.runFileStatus == RunFileStatus.READING) {
+            ++leftRunFileTupleIndex;
+        } else {
+            ++leftBufferTupleIndex;
+        }
+    }
+
+    /**
+     * Ensures a frame exists for the right branch, either from memory or the run file.
+     *
+     * @throws HyracksDataException
+     */
+    private boolean loadLeftTuple() throws HyracksDataException {
+        boolean loaded = true;
+        if (status.runFileStatus == RunFileStatus.READING) {
+            if (leftRunFileTupleIndex >= accessorLeft.getTupleCount()) {
                 if (runFileReader.nextFrame(runFileBuffer)) {
-                    accessorRight.reset(runFileBuffer.getBuffer());
-                    rightRunFileTupleIndex = 0;
+                    accessorLeft.reset(runFileBuffer.getBuffer());
+                    leftRunFileTupleIndex = 0;
                 } else {
-                    closeFromRunFile();
-                    return loadRightTuple();
+                    closeRunFile();
+                    return loadLeftTuple();
                 }
             }
         } else {
-            if (rightBufferTupleIndex >= accessorRight.getTupleCount() || rightBufferTupleIndex == -1) {
-                status.loadRightFrame = true;
-                locks.getRight(partition).signal();
-                try {
-                    while (status.loadRightFrame && status.getRightStatus() == BranchStatus.DATA_PROCESSING) {
-                        locks.getLeft(partition).await();
-                    }
-                } catch (InterruptedException e) {
-                    throw new HyracksDataException(
-                            "SortMergeIntervalJoin interrupted exception while attempting to load right tuple", e);
-                }
-                status.loadRightFrame = false;
-                loaded = (rightBufferTupleIndex == 0);
-                if (!loaded) {
-                    status.rightHasMore = false;
-                }
+            if (leftBufferTupleIndex == -1 || leftBufferTupleIndex >= accessorLeft.getTupleCount()) {
+                loaded = false;
             }
         }
         return loaded;
@@ -219,11 +250,11 @@ public class MergeJoiner {
      *
      * @throws HyracksDataException
      */
-    private boolean loadLeftTuple() throws HyracksDataException {
-        if (status.getLeftStatus() == BranchStatus.DATA_PROCESSING && leftTupleIndex >= accessorLeft.getTupleCount()) {
-            return false;
+    private boolean needNewLeftTuple() throws HyracksDataException {
+        if (leftBufferTupleIndex == -1 || leftBufferTupleIndex >= accessorLeft.getTupleCount()) {
+            return true;
         }
-        return true;
+        return false;
     }
 
     // memory management
@@ -231,86 +262,101 @@ public class MergeJoiner {
         return bufferManager.getNumTuples() > 0;
     }
 
-    public void processMerge() throws HyracksDataException {
-        // Ensure right tuple loaded into accessorRight
-        while (loadRightTuple() && status.rightHasMore) {
-            // *********************
-            // Left side from memory
-            // *********************
-            if (status.reloadingLeftFrame) {
-                // Skip the right frame memory processing.
-                status.reloadingLeftFrame = false;
-            } else {
-                if (status.runFileStatus == RunFileStatus.WRITING) {
-                    // Write right tuple to run file
-                    addToRunFile(accessorRight, getRightTupleIndex());
-                }
+    /**
+     * Left
+     *
+     * @throws HyracksDataException
+     */
+    public void processMergeUsingLeftTuple(IFrameWriter writer) throws HyracksDataException {
+        // *********************
+        // Left side from tuple
+        // *********************
+        while (!needNewLeftTuple() && loadLeftTuple()) {
+            // Write left tuple to run file
+            if (status.runFileStatus == RunFileStatus.WRITING) {
+                addToRunFile(accessorLeft, getLeftTupleIndex());
+            }
 
-                for (Iterator<TuplePointer> memoryIterator = memoryTuples.iterator(); memoryIterator.hasNext();) {
-                    TuplePointer tp = memoryIterator.next();
+            // *********************
+            // Right side from memory
+            // *********************
+            if (rightBufferTupleIndex != -1) {
+                Iterator<TuplePointer> memoryIterator = memoryTuples.iterator();
+                while (memoryIterator.hasNext()) {
+                    tp.reset(memoryIterator.next());
                     memoryAccessor.reset(tp);
-                    int c = comparator.compare(memoryAccessor, MEMORY_INDEX, accessorRight, getRightTupleIndex());
-                    if (c < 0) {
+                    if (mjc.checkToSaveInResult(accessorLeft, getLeftTupleIndex(), memoryAccessor, MEMORY_INDEX)) {
+                        // add to result
+                        addToResult(accessorLeft, getLeftTupleIndex(), memoryAccessor, MEMORY_INDEX, writer);
+                    }
+                    if (mjc.checkToRemoveInMemory(accessorLeft, getLeftTupleIndex(), memoryAccessor, MEMORY_INDEX)) {
                         // remove from memory
                         bufferManager.deleteTuple(tp);
                         memoryIterator.remove();
                     }
-                    if (c == 0) {
-                        // add to result
-                        addToResult(memoryAccessor, MEMORY_INDEX, accessorRight, getRightTupleIndex());
-                    }
                 }
 
+                // Memory is empty and we can start processing the run file.
                 if (!memoryHasTuples() && status.runFileStatus == RunFileStatus.WRITING) {
-                    // Memory is empty and we can start processing the run file.
-                    openFromRunFile();
+                    openRunFile();
                     flushMemory();
                 }
             }
 
             // *********************
-            // Left side from stream
+            // Right side from stream
             // *********************
-            if (status.runFileStatus == RunFileStatus.NOT_USED && status.leftHasMore) {
-                int c = comparator.compare(accessorLeft, leftTupleIndex, accessorRight, getRightTupleIndex());
-                while (c <= 0) {
-                    if (c == 0) {
+            if (status.runFileStatus == RunFileStatus.NOT_USED && loadRightTuple() && status.rightHasMore) {
+                while (mjc.checkToLoadNextRightTuple(accessorLeft, getLeftTupleIndex(), accessorRight,
+                        getRightTupleIndex())) {
+                    if (mjc.checkToSaveInResult(accessorLeft, getLeftTupleIndex(), accessorRight,
+                            getRightTupleIndex())) {
                         // add to result
-                        addToResult(accessorLeft, leftTupleIndex, accessorRight, getRightTupleIndex());
-                        // append to memory
-                        if (!addToMemory(accessorLeft, leftTupleIndex)) {
+                        addToResult(accessorLeft, getLeftTupleIndex(), accessorRight, getRightTupleIndex(), writer);
+                    }
+                    // append to memory
+                    if (mjc.checkToSaveInMemory(accessorLeft, getLeftTupleIndex(), accessorRight,
+                            getRightTupleIndex())) {
+                        if (!addToMemory(accessorRight, getRightTupleIndex())) {
                             // go to log saving state
                             status.runFileStatus = RunFileStatus.WRITING;
                             // write right tuple to run file
-                            addToRunFile(accessorRight, getRightTupleIndex());
-                            // break (do not increment left tuple)
+                            addToRunFile(accessorLeft, getLeftTupleIndex());
                             break;
                         }
                     }
-                    incrementLeftTuple();
-                    if (!loadLeftTuple()) {
-                        return;
+                    incrementRightTuple();
+                    if (!loadRightTuple()) {
+                        break;
                     }
-                    c = comparator.compare(accessorLeft, leftTupleIndex, accessorRight, getRightTupleIndex());
                 }
             }
-            incrementRightTuple();
+            incrementLeftTuple();
         }
     }
 
     public void setLeftFrame(ByteBuffer buffer) {
-        leftBuffer = buffer;
+        if (leftBuffer.capacity() < buffer.capacity()) {
+            leftBuffer.limit(buffer.capacity());
+        }
+        leftBuffer.put(buffer.array(), 0, buffer.capacity());
         accessorLeft.reset(leftBuffer);
-        leftTupleIndex = 0;
+        leftBufferTupleIndex = 0;
     }
 
     public void setRightFrame(ByteBuffer buffer) {
-        rightBuffer = buffer;
+        if (rightBuffer.capacity() < buffer.capacity()) {
+            rightBuffer.limit(buffer.capacity());
+        }
+        rightBuffer.put(buffer.array(), 0, buffer.capacity());
         accessorRight.reset(rightBuffer);
         rightBufferTupleIndex = 0;
+        status.loadRightFrame = false;
     }
 
     public void setRightRecordDescriptor(RecordDescriptor rightRd) {
         accessorRight = new FrameTupleAccessor(rightRd);
+        bufferManager = new VariableTupleMemoryManager(framePool, rightRd);
+        memoryAccessor = bufferManager.getFrameTupleAccessor();
     }
 }

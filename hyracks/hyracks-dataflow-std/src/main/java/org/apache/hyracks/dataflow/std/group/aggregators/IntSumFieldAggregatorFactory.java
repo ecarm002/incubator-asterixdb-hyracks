@@ -27,7 +27,6 @@ import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.primitive.IntegerPointable;
-import org.apache.hyracks.dataflow.common.data.marshalling.IntegerSerializerDeserializer;
 import org.apache.hyracks.dataflow.std.group.AggregateState;
 import org.apache.hyracks.dataflow.std.group.IFieldAggregateDescriptor;
 import org.apache.hyracks.dataflow.std.group.IFieldAggregateDescriptorFactory;
@@ -50,7 +49,7 @@ public class IntSumFieldAggregatorFactory implements IFieldAggregateDescriptorFa
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.apache.hyracks.dataflow.std.aggregations.
      * IFieldAggregateDescriptorFactory
      * #createAggregator(org.apache.hyracks.api.context.IHyracksTaskContext,
@@ -107,7 +106,8 @@ public class IntSumFieldAggregatorFactory implements IFieldAggregateDescriptorFa
                 int tupleOffset = accessor.getTupleStartOffset(tIndex);
                 int fieldStart = accessor.getFieldStartOffset(tIndex, aggField);
 
-                sum += IntegerPointable.getInteger(accessor.getBuffer().array(), tupleOffset + accessor.getFieldSlotsLength() + fieldStart);
+                sum += IntegerPointable.getInteger(accessor.getBuffer().array(),
+                        tupleOffset + accessor.getFieldSlotsLength() + fieldStart);
 
                 if (!useObjectState) {
                     try {
@@ -143,7 +143,8 @@ public class IntSumFieldAggregatorFactory implements IFieldAggregateDescriptorFa
                 int sum = 0;
                 int tupleOffset = accessor.getTupleStartOffset(tIndex);
                 int fieldStart = accessor.getFieldStartOffset(tIndex, aggField);
-                sum += IntegerPointable.getInteger(accessor.getBuffer().array(), tupleOffset + accessor.getFieldSlotsLength() + fieldStart);
+                sum += IntegerPointable.getInteger(accessor.getBuffer().array(),
+                        tupleOffset + accessor.getFieldSlotsLength() + fieldStart);
 
                 if (!useObjectState) {
                     ByteBuffer buf = ByteBuffer.wrap(data);

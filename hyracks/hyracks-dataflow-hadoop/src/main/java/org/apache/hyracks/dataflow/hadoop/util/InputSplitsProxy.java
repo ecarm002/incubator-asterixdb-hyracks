@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.util.ReflectionUtils;
 

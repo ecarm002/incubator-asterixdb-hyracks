@@ -27,7 +27,6 @@ import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.primitive.FloatPointable;
-import org.apache.hyracks.dataflow.common.data.marshalling.FloatSerializerDeserializer;
 import org.apache.hyracks.dataflow.std.group.AggregateState;
 import org.apache.hyracks.dataflow.std.group.IFieldAggregateDescriptor;
 import org.apache.hyracks.dataflow.std.group.IFieldAggregateDescriptorFactory;
@@ -35,37 +34,35 @@ import org.apache.hyracks.dataflow.std.group.IFieldAggregateDescriptorFactory;
 /**
  *
  */
-public class FloatSumFieldAggregatorFactory implements
-        IFieldAggregateDescriptorFactory {
+public class FloatSumFieldAggregatorFactory implements IFieldAggregateDescriptorFactory {
 
     private static final long serialVersionUID = 1L;
 
     private final int aggField;
 
     private final boolean useObjectState;
-    
-    public FloatSumFieldAggregatorFactory(int aggField, boolean useObjState){
+
+    public FloatSumFieldAggregatorFactory(int aggField, boolean useObjState) {
         this.aggField = aggField;
         this.useObjectState = useObjState;
     }
-    
+
     /* (non-Javadoc)
      * @see org.apache.hyracks.dataflow.std.group.IFieldAggregateDescriptorFactory#createAggregator(org.apache.hyracks.api.context.IHyracksTaskContext, org.apache.hyracks.api.dataflow.value.RecordDescriptor, org.apache.hyracks.api.dataflow.value.RecordDescriptor)
      */
     @Override
-    public IFieldAggregateDescriptor createAggregator(IHyracksTaskContext ctx,
-            RecordDescriptor inRecordDescriptor,
+    public IFieldAggregateDescriptor createAggregator(IHyracksTaskContext ctx, RecordDescriptor inRecordDescriptor,
             RecordDescriptor outRecordDescriptor) throws HyracksDataException {
         return new IFieldAggregateDescriptor() {
-            
+
             @Override
             public void reset() {
-                
+
             }
-            
+
             @Override
-            public void outputPartialResult(DataOutput fieldOutput, byte[] data,
-                    int offset, AggregateState state) throws HyracksDataException {
+            public void outputPartialResult(DataOutput fieldOutput, byte[] data, int offset, AggregateState state)
+                    throws HyracksDataException {
                 float sum;
                 if (!useObjectState) {
                     sum = FloatPointable.getFloat(data, offset);
@@ -78,10 +75,10 @@ public class FloatSumFieldAggregatorFactory implements
                     throw new HyracksDataException("I/O exception when writing aggregation to the output buffer.");
                 }
             }
-            
+
             @Override
-            public void outputFinalResult(DataOutput fieldOutput, byte[] data,
-                    int offset, AggregateState state) throws HyracksDataException {
+            public void outputFinalResult(DataOutput fieldOutput, byte[] data, int offset, AggregateState state)
+                    throws HyracksDataException {
                 float sum;
                 if (!useObjectState) {
                     sum = FloatPointable.getFloat(data, offset);
@@ -94,26 +91,26 @@ public class FloatSumFieldAggregatorFactory implements
                     throw new HyracksDataException("I/O exception when writing aggregation to the output buffer.");
                 }
             }
-            
+
             @Override
             public boolean needsObjectState() {
                 return useObjectState;
             }
-            
+
             @Override
             public boolean needsBinaryState() {
                 return !useObjectState;
             }
-            
+
             @Override
-            public void init(IFrameTupleAccessor accessor, int tIndex,
-                    DataOutput fieldOutput, AggregateState state)
+            public void init(IFrameTupleAccessor accessor, int tIndex, DataOutput fieldOutput, AggregateState state)
                     throws HyracksDataException {
                 float sum = 0;
                 int tupleOffset = accessor.getTupleStartOffset(tIndex);
                 int fieldStart = accessor.getFieldStartOffset(tIndex, aggField);
 
-                sum += FloatPointable.getFloat(accessor.getBuffer().array(), tupleOffset + accessor.getFieldSlotsLength() + fieldStart);
+                sum += FloatPointable.getFloat(accessor.getBuffer().array(),
+                        tupleOffset + accessor.getFieldSlotsLength() + fieldStart);
 
                 if (!useObjectState) {
                     try {
@@ -125,26 +122,26 @@ public class FloatSumFieldAggregatorFactory implements
                     state.state = sum;
                 }
             }
-            
+
             @Override
             public AggregateState createState() {
                 return new AggregateState(new Float(0.0));
             }
-            
+
             @Override
             public void close() {
                 // TODO Auto-generated method stub
-                
+
             }
-            
+
             @Override
-            public void aggregate(IFrameTupleAccessor accessor, int tIndex,
-                    byte[] data, int offset, AggregateState state)
-                    throws HyracksDataException {
+            public void aggregate(IFrameTupleAccessor accessor, int tIndex, byte[] data, int offset,
+                    AggregateState state) throws HyracksDataException {
                 float sum = 0;
                 int tupleOffset = accessor.getTupleStartOffset(tIndex);
                 int fieldStart = accessor.getFieldStartOffset(tIndex, aggField);
-                sum += FloatPointable.getFloat(accessor.getBuffer().array(), tupleOffset + accessor.getFieldSlotsLength() + fieldStart);
+                sum += FloatPointable.getFloat(accessor.getBuffer().array(),
+                        tupleOffset + accessor.getFieldSlotsLength() + fieldStart);
 
                 if (!useObjectState) {
                     ByteBuffer buf = ByteBuffer.wrap(data);

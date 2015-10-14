@@ -37,11 +37,11 @@ import org.apache.hyracks.api.dataflow.IConnectorDescriptor;
 import org.apache.hyracks.api.job.IConnectorDescriptorRegistry;
 import org.apache.hyracks.dataflow.std.connectors.MToNBroadcastConnectorDescriptor;
 
-public class BroadcastPOperator extends AbstractExchangePOperator {
+public class BroadcastExchangePOperator extends AbstractExchangePOperator {
 
     private INodeDomain domain;
 
-    public BroadcastPOperator(INodeDomain domain) {
+    public BroadcastExchangePOperator(INodeDomain domain) {
         this.domain = domain;
     }
 

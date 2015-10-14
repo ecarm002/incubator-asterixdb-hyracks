@@ -51,7 +51,7 @@ import org.apache.hyracks.algebricks.core.algebra.operators.logical.OrderOperato
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.OrderOperator.IOrder.OrderKind;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.visitors.FDsAndEquivClassesVisitor;
 import org.apache.hyracks.algebricks.core.algebra.operators.physical.AbstractStableSortPOperator;
-import org.apache.hyracks.algebricks.core.algebra.operators.physical.BroadcastPOperator;
+import org.apache.hyracks.algebricks.core.algebra.operators.physical.BroadcastExchangePOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.physical.ExternalGroupByPOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.physical.HashPartitionExchangePOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.physical.HashPartitionMergeExchangePOperator;
@@ -59,9 +59,9 @@ import org.apache.hyracks.algebricks.core.algebra.operators.physical.InMemorySta
 import org.apache.hyracks.algebricks.core.algebra.operators.physical.PreSortedDistinctByPOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.physical.PreclusteredGroupByPOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.physical.RandomMergeExchangePOperator;
-import org.apache.hyracks.algebricks.core.algebra.operators.physical.RandomPartitionPOperator;
-import org.apache.hyracks.algebricks.core.algebra.operators.physical.RangePartitionMergePOperator;
-import org.apache.hyracks.algebricks.core.algebra.operators.physical.RangePartitionPOperator;
+import org.apache.hyracks.algebricks.core.algebra.operators.physical.RandomPartitionExchangePOperator;
+import org.apache.hyracks.algebricks.core.algebra.operators.physical.RangePartitionExchangePOperator;
+import org.apache.hyracks.algebricks.core.algebra.operators.physical.RangePartitionMergeExchangePOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.physical.SortMergeExchangePOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.physical.StableSortPOperator;
 import org.apache.hyracks.algebricks.core.algebra.prettyprint.LogicalOperatorPrettyPrintVisitor;
@@ -543,7 +543,7 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
                         if (op.getAnnotations().containsKey(OperatorAnnotations.USE_RANGE_CONNECTOR)) {
                             IRangeMap rangeMap = (IRangeMap) op.getAnnotations()
                                     .get(OperatorAnnotations.USE_RANGE_CONNECTOR);
-                            pop = new RangePartitionMergePOperator(ordCols, domain, rangeMap,
+                            pop = new RangePartitionMergeExchangePOperator(ordCols, domain, rangeMap,
                                     RangePartitioningType.PROJECT);
                         } else {
                             OrderColumn[] sortColumns = new OrderColumn[ordCols.size()];
@@ -589,25 +589,25 @@ public class EnforceStructuralPropertiesRule implements IAlgebraicRewriteRule {
                         if (PropertiesUtil.matchLocalProperties(reqdLocals, cldLocals, ecs, fds)) {
                             List<OrderColumn> orderColumns = getOrderColumnsFromGroupingProperties(reqdLocals,
                                     cldLocals);
-                            pop = new RangePartitionMergePOperator(orderColumns, domain, opp.getRangeMap(),
+                            pop = new RangePartitionMergeExchangePOperator(orderColumns, domain, opp.getRangeMap(),
                                     opp.getRangePartitioningType());
                             propWasSet = true;
                         }
                     }
                     if (!propWasSet) {
-                        pop = new RangePartitionPOperator(opp.getOrderColumns(), domain, opp.getRangeMap(),
+                        pop = new RangePartitionExchangePOperator(opp.getOrderColumns(), domain, opp.getRangeMap(),
                                 opp.getRangePartitioningType());
                     }
                     break;
                 }
                 case BROADCAST: {
-                    pop = new BroadcastPOperator(domain);
+                    pop = new BroadcastExchangePOperator(domain);
                     break;
                 }
                 case RANDOM: {
                     RandomPartitioningProperty rpp = (RandomPartitioningProperty) pp;
                     INodeDomain nd = rpp.getNodeDomain();
-                    pop = new RandomPartitionPOperator(nd);
+                    pop = new RandomPartitionExchangePOperator(nd);
                     break;
                 }
                 default: {

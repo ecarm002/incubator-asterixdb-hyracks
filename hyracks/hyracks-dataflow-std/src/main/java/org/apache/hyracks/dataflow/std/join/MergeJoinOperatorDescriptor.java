@@ -23,40 +23,46 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.ActivityId;
 import org.apache.hyracks.api.dataflow.IActivityGraphBuilder;
 import org.apache.hyracks.api.dataflow.IOperatorNodePushable;
 import org.apache.hyracks.api.dataflow.TaskId;
-import org.apache.hyracks.api.dataflow.value.IBinaryComparator;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.IOperatorDescriptorRegistry;
 import org.apache.hyracks.api.job.JobId;
-import org.apache.hyracks.dataflow.common.comm.io.FrameTuplePairComparator;
 import org.apache.hyracks.dataflow.std.base.AbstractActivityNode;
 import org.apache.hyracks.dataflow.std.base.AbstractOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.base.AbstractStateObject;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputSinkOperatorNodePushable;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputUnaryOutputOperatorNodePushable;
-import org.apache.hyracks.dataflow.std.base.AbstractUnaryOutputOperatorNodePushable;
 
+/**
+ * The merge join is made up of two operators: left and right.
+ * The right operator loads right stream into memory for the merge process.
+ * The left operator streams the left input and the right memory store to merge and join the data.
+ *
+ * @author prestonc
+ */
 public class MergeJoinOperatorDescriptor extends AbstractOperatorDescriptor {
     private static final int LEFT_ACTIVITY_ID = 0;
     private static final int RIGHT_ACTIVITY_ID = 1;
     private final IBinaryComparatorFactory[] comparatorFactories;
+    private final IMergeJoinCheckerFactory mergeJoinCheckerFactory;
     private final int[] keys0;
     private final int[] keys1;
     private final int memSize;
 
     public MergeJoinOperatorDescriptor(IOperatorDescriptorRegistry spec, int memSize, RecordDescriptor recordDescriptor,
-            int[] keys0, int[] keys1, IBinaryComparatorFactory[] comparatorFactories) {
+            int[] keys0, int[] keys1, IBinaryComparatorFactory[] comparatorFactories,
+            IMergeJoinCheckerFactory mergeJoinCheckerFactory) {
         super(spec, 2, 1);
         recordDescriptors[0] = recordDescriptor;
         this.comparatorFactories = comparatorFactories;
+        this.mergeJoinCheckerFactory = mergeJoinCheckerFactory;
         this.keys0 = keys0;
         this.keys1 = keys1;
         this.memSize = memSize;
@@ -118,26 +124,23 @@ public class MergeJoinOperatorDescriptor extends AbstractOperatorDescriptor {
                         throws HyracksDataException {
             locks.setPartitions(nPartitions);
             final RecordDescriptor inRecordDesc = recordDescProvider.getInputRecordDescriptor(getActivityId(), 0);
-            final IBinaryComparator[] comparators = new IBinaryComparator[comparatorFactories.length];
-            for (int i = 0; i < comparatorFactories.length; ++i) {
-                comparators[i] = comparatorFactories[i].createBinaryComparator();
-            }
-            return new LeftJoinerOperator(ctx, partition, inRecordDesc, comparators);
+            IMergeJoinChecker mjc = mergeJoinCheckerFactory.createMergeJoinChecker(comparatorFactories, keys0, keys1);
+            return new LeftJoinerOperator(ctx, partition, inRecordDesc, mjc);
         }
 
         private class LeftJoinerOperator extends AbstractUnaryInputUnaryOutputOperatorNodePushable {
 
             private final IHyracksTaskContext ctx;
             private final int partition;
-            private final IBinaryComparator[] comparators;
             private final RecordDescriptor leftRD;
+            private final IMergeJoinChecker mjc;
 
             public LeftJoinerOperator(IHyracksTaskContext ctx, int partition, RecordDescriptor inRecordDesc,
-                    IBinaryComparator[] comparators) {
+                    IMergeJoinChecker mjc) {
                 this.ctx = ctx;
                 this.partition = partition;
                 this.leftRD = inRecordDesc;
-                this.comparators = comparators;
+                this.mjc = mjc;
             }
 
             private SortMergeIntervalJoinTaskState state;
@@ -150,12 +153,10 @@ public class MergeJoinOperatorDescriptor extends AbstractOperatorDescriptor {
                     state = new SortMergeIntervalJoinTaskState(ctx.getJobletContext().getJobId(),
                             new TaskId(getActivityId(), partition));
                     state.status.openLeft();
-                    state.joiner = new MergeJoiner(ctx, memSize, partition, state.status, locks,
-                            new FrameTuplePairComparator(keys0, keys1, comparators), writer, leftRD);
+                    state.joiner = new MergeJoiner(ctx, memSize, partition, state.status, locks, mjc, leftRD);
                     ctx.setStateObject(state);
                     locks.getRight(partition).signal();
                 } catch (Exception e) {
-                    e.printStackTrace();
                     throw new HyracksDataException(e);
                 } finally {
                     locks.getLock(partition).unlock();
@@ -170,9 +171,8 @@ public class MergeJoinOperatorDescriptor extends AbstractOperatorDescriptor {
                 }
                 try {
                     state.joiner.setLeftFrame(buffer);
-                    state.joiner.processMerge();
+                    state.joiner.processMergeUsingLeftTuple(writer);
                 } catch (Exception e) {
-                    e.printStackTrace();
                     throw new HyracksDataException(e);
                 } finally {
                     locks.getLock(partition).unlock();
@@ -184,7 +184,6 @@ public class MergeJoinOperatorDescriptor extends AbstractOperatorDescriptor {
                 try {
                     state.failed = true;
                 } catch (Exception e) {
-                    e.printStackTrace();
                     throw new HyracksDataException(e);
                 } finally {
                     locks.getLock(partition).unlock();
@@ -198,12 +197,12 @@ public class MergeJoinOperatorDescriptor extends AbstractOperatorDescriptor {
                     if (state.failed) {
                         writer.fail();
                     } else {
-                        state.joiner.processMerge();
+                        state.joiner.processMergeUsingLeftTuple(writer);
+                        state.joiner.closeResult(writer);
                         writer.close();
                     }
                     state.status.closeLeft();
                 } catch (Exception e) {
-                    e.printStackTrace();
                     throw new HyracksDataException(e);
                 } finally {
                     locks.getLock(partition).unlock();
@@ -264,7 +263,6 @@ public class MergeJoinOperatorDescriptor extends AbstractOperatorDescriptor {
                 } catch (InterruptedException e) {
                     throw new HyracksDataException("RightOperator interrupted exceptrion", e);
                 } catch (Exception e) {
-                    e.printStackTrace();
                     throw new HyracksDataException(e);
                 } finally {
                     locks.getLock(partition).unlock();
@@ -279,8 +277,8 @@ public class MergeJoinOperatorDescriptor extends AbstractOperatorDescriptor {
                     first = false;
                 }
                 try {
-                    while (state.status.loadRightFrame == false) {
-                        // Wait for the state to request right frame.
+                    while (state.status.loadRightFrame == false && state.status.leftHasMore == true) {
+                        // Wait for the state to request right frame unless left has finished.
                         locks.getRight(partition).await();
                     };
                     state.joiner.setRightFrame(buffer);
@@ -288,7 +286,6 @@ public class MergeJoinOperatorDescriptor extends AbstractOperatorDescriptor {
                 } catch (InterruptedException e) {
                     throw new HyracksDataException("RightOperator interrupted exceptrion", e);
                 } catch (Exception e) {
-                    e.printStackTrace();
                     throw new HyracksDataException(e);
                 } finally {
                     locks.getLock(partition).unlock();
@@ -300,8 +297,8 @@ public class MergeJoinOperatorDescriptor extends AbstractOperatorDescriptor {
                 locks.getLock(partition).lock();
                 try {
                     state.failed = true;
+                    locks.getLeft(partition).signal();
                 } catch (Exception e) {
-                    e.printStackTrace();
                     throw new HyracksDataException(e);
                 } finally {
                     locks.getLock(partition).unlock();
@@ -313,8 +310,8 @@ public class MergeJoinOperatorDescriptor extends AbstractOperatorDescriptor {
                 locks.getLock(partition).lock();
                 try {
                     state.status.closeRight();
+                    locks.getLeft(partition).signal();
                 } catch (Exception e) {
-                    e.printStackTrace();
                     throw new HyracksDataException(e);
                 } finally {
                     locks.getLock(partition).unlock();

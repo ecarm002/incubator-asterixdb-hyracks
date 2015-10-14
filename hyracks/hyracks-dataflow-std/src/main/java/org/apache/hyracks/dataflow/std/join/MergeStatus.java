@@ -27,7 +27,11 @@ public class MergeStatus implements Serializable {
         UNKNOWN,
         OPENED,
         DATA_PROCESSING,
-        CLOSED,
+        CLOSED;
+
+        public boolean isEqualOrBefore(BranchStatus bs) {
+            return this.ordinal() <= bs.ordinal();
+        }
     }
 
     public enum RunFileStatus {

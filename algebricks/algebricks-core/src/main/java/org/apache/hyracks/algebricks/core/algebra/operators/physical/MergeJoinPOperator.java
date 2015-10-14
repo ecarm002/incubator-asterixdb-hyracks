@@ -49,6 +49,7 @@ import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.job.IOperatorDescriptorRegistry;
 import org.apache.hyracks.dataflow.common.data.partition.range.IRangeMap;
 import org.apache.hyracks.dataflow.common.data.partition.range.IRangePartitionType.RangePartitioningType;
+import org.apache.hyracks.dataflow.std.join.IMergeJoinCheckerFactory;
 import org.apache.hyracks.dataflow.std.join.MergeJoinOperatorDescriptor;
 
 public class MergeJoinPOperator extends AbstractJoinPOperator {
@@ -57,16 +58,18 @@ public class MergeJoinPOperator extends AbstractJoinPOperator {
     protected final List<LogicalVariable> keysLeftBranch;
     protected final List<LogicalVariable> keysRightBranch;
     private final IBinaryComparatorFactoryProvider bcfp;
+    private final IMergeJoinCheckerFactory mjcf;
     private IRangeMap rangeMap;
 
     public MergeJoinPOperator(JoinKind kind, JoinPartitioningType partitioningType, int memSize,
             List<LogicalVariable> sideLeft, List<LogicalVariable> sideRight, IBinaryComparatorFactoryProvider bcfp,
-            IRangeMap rangeMap) {
+            IMergeJoinCheckerFactory mjcf, IRangeMap rangeMap) {
         super(kind, partitioningType);
         this.memSize = memSize;
         this.keysLeftBranch = sideLeft;
         this.keysRightBranch = sideRight;
         this.bcfp = bcfp;
+        this.mjcf = mjcf;
         this.rangeMap = rangeMap;
     }
 
@@ -143,8 +146,8 @@ public class MergeJoinPOperator extends AbstractJoinPOperator {
         RecordDescriptor recordDescriptor = JobGenHelper.mkRecordDescriptor(context.getTypeEnvironment(op), opSchema,
                 context);
 
-        MergeJoinOperatorDescriptor opDesc = new MergeJoinOperatorDescriptor(spec, memSize,
-                recordDescriptor, keysLeft, keysRight, comparatorFactories);
+        MergeJoinOperatorDescriptor opDesc = new MergeJoinOperatorDescriptor(spec, memSize, recordDescriptor, keysLeft,
+                keysRight, comparatorFactories, mjcf);
         contributeOpDesc(builder, (AbstractLogicalOperator) op, opDesc);
 
         ILogicalOperator src1 = op.getInputs().get(0).getValue();

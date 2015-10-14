@@ -27,7 +27,6 @@ import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.primitive.IntegerPointable;
-import org.apache.hyracks.dataflow.common.data.marshalling.IntegerSerializerDeserializer;
 import org.apache.hyracks.dataflow.std.group.AggregateState;
 import org.apache.hyracks.dataflow.std.group.IFieldAggregateDescriptor;
 import org.apache.hyracks.dataflow.std.group.IFieldAggregateDescriptorFactory;
@@ -50,7 +49,7 @@ public class AvgFieldMergeAggregatorFactory implements IFieldAggregateDescriptor
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.apache.hyracks.dataflow.std.aggregations.
      * IFieldAggregateDescriptorFactory
      * #createAggregator(org.apache.hyracks.api.context.IHyracksTaskContext,
@@ -118,7 +117,8 @@ public class AvgFieldMergeAggregatorFactory implements IFieldAggregateDescriptor
                 int sum = 0, count = 0;
                 int tupleOffset = accessor.getTupleStartOffset(tIndex);
                 int fieldStart = accessor.getFieldStartOffset(tIndex, aggField);
-                sum += IntegerPointable.getInteger(accessor.getBuffer().array(), tupleOffset + accessor.getFieldSlotsLength() + fieldStart);
+                sum += IntegerPointable.getInteger(accessor.getBuffer().array(),
+                        tupleOffset + accessor.getFieldSlotsLength() + fieldStart);
                 count += 1;
                 if (!useObjectState) {
                     ByteBuffer buf = ByteBuffer.wrap(data);
@@ -156,8 +156,10 @@ public class AvgFieldMergeAggregatorFactory implements IFieldAggregateDescriptor
                 int count = 0;
                 int tupleOffset = accessor.getTupleStartOffset(tIndex);
                 int fieldStart = accessor.getFieldStartOffset(tIndex, aggField);
-                sum += IntegerPointable.getInteger(accessor.getBuffer().array(), tupleOffset + accessor.getFieldSlotsLength() + fieldStart);
-                count += IntegerPointable.getInteger(accessor.getBuffer().array(), tupleOffset + accessor.getFieldSlotsLength() + fieldStart + 4);
+                sum += IntegerPointable.getInteger(accessor.getBuffer().array(),
+                        tupleOffset + accessor.getFieldSlotsLength() + fieldStart);
+                count += IntegerPointable.getInteger(accessor.getBuffer().array(),
+                        tupleOffset + accessor.getFieldSlotsLength() + fieldStart + 4);
                 if (!useObjectState) {
                     try {
                         fieldOutput.writeInt(sum);
