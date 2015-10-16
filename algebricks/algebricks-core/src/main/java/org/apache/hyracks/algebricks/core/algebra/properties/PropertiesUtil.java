@@ -158,9 +158,13 @@ public class PropertiesUtil {
                         OrderedPartitionedProperty or = (OrderedPartitionedProperty) reqd;
                         OrderedPartitionedProperty od = (OrderedPartitionedProperty) dlvd;
                         if (mayExpandProperties) {
-                            return isPrefixOf(od.getOrderColumns().iterator(), or.getOrderColumns().iterator());
+                            return (isPrefixOf(od.getOrderColumns().iterator(), or.getOrderColumns().iterator())
+                                    && or.getPartitioningType().equals(od.getRangePartitioningType())
+                                    && or.getRangeMap().equals(od.getRangeMap()));
                         } else {
-                            return od.getOrderColumns().equals(or.getOrderColumns());
+                            return (or.getOrderColumns().equals(od.getOrderColumns())
+                                    && or.getPartitioningType().equals(od.getRangePartitioningType())
+                                    && or.getRangeMap().equals(od.getRangeMap()));
                         }
                     }
                     default: {

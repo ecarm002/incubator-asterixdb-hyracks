@@ -111,10 +111,8 @@ public class RangePartitionMergeExchangePOperator extends AbstractExchangePOpera
             columns.add(new OrderColumn(var, oc.getOrder()));
         }
         orderProps.add(new LocalOrderProperty(columns));
-        OrderedPartitionedProperty orderedPP = new OrderedPartitionedProperty(partitioningFields, domain, rangeMap,
-                rangeType);
         StructuralPropertiesVector[] r = new StructuralPropertiesVector[] {
-                new StructuralPropertiesVector(orderedPP, orderProps) };
+                new StructuralPropertiesVector(null, orderProps) };
         return new PhysicalRequirements(r, IPartitioningRequirementsCoordinator.NO_COORDINATION);
     }
 
