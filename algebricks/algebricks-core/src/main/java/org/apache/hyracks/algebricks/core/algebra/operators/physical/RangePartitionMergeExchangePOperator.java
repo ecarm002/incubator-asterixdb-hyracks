@@ -64,8 +64,8 @@ public class RangePartitionMergeExchangePOperator extends AbstractExchangePOpera
     private IRangeMap rangeMap;
     private RangePartitioningType rangeType;
 
-    public RangePartitionMergeExchangePOperator(List<OrderColumn> partitioningFields, INodeDomain domain, IRangeMap rangeMap,
-            RangePartitioningType rangeType) {
+    public RangePartitionMergeExchangePOperator(List<OrderColumn> partitioningFields, INodeDomain domain,
+            IRangeMap rangeMap, RangePartitioningType rangeType) {
         this.partitioningFields = partitioningFields;
         this.domain = domain;
         this.rangeMap = rangeMap;
@@ -111,9 +111,10 @@ public class RangePartitionMergeExchangePOperator extends AbstractExchangePOpera
             columns.add(new OrderColumn(var, oc.getOrder()));
         }
         orderProps.add(new LocalOrderProperty(columns));
-        OrderedPartitionedProperty orderedPP = new OrderedPartitionedProperty(partitioningFields, domain);
-        StructuralPropertiesVector[] r = new StructuralPropertiesVector[] { new StructuralPropertiesVector(orderedPP,
-                orderProps) };
+        OrderedPartitionedProperty orderedPP = new OrderedPartitionedProperty(partitioningFields, domain, rangeMap,
+                rangeType);
+        StructuralPropertiesVector[] r = new StructuralPropertiesVector[] {
+                new StructuralPropertiesVector(orderedPP, orderProps) };
         return new PhysicalRequirements(r, IPartitioningRequirementsCoordinator.NO_COORDINATION);
     }
 

@@ -47,13 +47,6 @@ public class OrderedPartitionedProperty implements IPartitioningProperty {
         this.domain = domain;
         this.orderColumns = orderColumns;
         this.rangeMap = rangeMap;
-        this.rangeType = rangeType;
-    }
-
-    public OrderedPartitionedProperty(List<OrderColumn> orderColumns, INodeDomain domain, IRangeMap rangeMap) {
-        this.domain = domain;
-        this.orderColumns = orderColumns;
-        this.rangeMap = rangeMap;
         this.rangeType = RangePartitioningType.PROJECT;
     }
 
