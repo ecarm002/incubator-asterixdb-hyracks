@@ -49,7 +49,10 @@ public class FieldRangePartitionComputerFactory implements ITuplePartitionComput
             comparators[i] = comparatorFactories[i].createBinaryComparator();
         }
         return new ITuplePartitionComputer() {
-            /**
+            private int partionCount;
+            private double rangesPerPart = 1;
+
+            /*
              * Determine the range partition.
              */
             public void partition(IFrameTupleAccessor accessor, int tIndex, int nParts, List<Integer> map)
@@ -58,34 +61,70 @@ public class FieldRangePartitionComputerFactory implements ITuplePartitionComput
                     map.add(0);
                     return;
                 }
-                int slotIndex = getRangePartition(accessor, tIndex);
                 // Map range partition to node partitions.
-                double rangesPerPart = 1;
-                if (rangeMap.getSplitCount() + 1 > nParts) {
-                    rangesPerPart = ((double) rangeMap.getSplitCount() + 1) / nParts;
+                if (partionCount != nParts) {
+                    partionCount = nParts;
+                    if (rangeMap.getSplitCount() + 1 > nParts) {
+                        rangesPerPart = ((double) rangeMap.getSplitCount() + 1) / nParts;
+                    }
                 }
-                map.add((int) Math.floor(slotIndex / rangesPerPart));
-                return;
+                getRangePartitions(accessor, tIndex, map);
             }
 
             /*
-             * Determine the range partition.
+             * Determine the range partitions.
              */
-            public int getRangePartition(IFrameTupleAccessor accessor, int tIndex) throws HyracksDataException {
-                int slotIndex = 0;
-                for (int i = 0; i < rangeMap.getSplitCount(); ++i) {
-                    int c = compareSlotAndFields(accessor, tIndex, i);
-                    if (c < 0) {
-                        return slotIndex;
+            private void getRangePartitions(IFrameTupleAccessor accessor, int tIndex, List<Integer> map)
+                    throws HyracksDataException {
+                int suggestedPartition = binarySearchRangePartition(accessor, tIndex);
+                addPartition(suggestedPartition, map);
+                if (rangeType != RangePartitioningType.PROJECT) {
+                    // Check range values above an below to ensure match partitions are included.
+                    int partitionIndex = suggestedPartition - 1;
+                    while (partitionIndex >= 0 && compareSlotAndFields(accessor, tIndex, partitionIndex) == 0) {
+                        addPartition(partitionIndex, map);
+                        --partitionIndex;
                     }
-                    slotIndex++;
+                    partitionIndex = suggestedPartition + 1;
+                    while (partitionIndex < rangeMap.getSplitCount()
+                            && compareSlotAndFields(accessor, tIndex, partitionIndex) == 0) {
+                        addPartition(partitionIndex, map);
+                        ++partitionIndex;
+                    }
                 }
-                return slotIndex;
             }
 
-            public int compareSlotAndFields(IFrameTupleAccessor accessor, int tIndex, int fieldIndex)
+            private void addPartition(int partition, List<Integer> map) {
+                map.add((int) Math.floor(partition / rangesPerPart));
+            }
+
+            /*
+             * Return first match or suggested index.
+             */
+            private int binarySearchRangePartition(IFrameTupleAccessor accessor, int tIndex)
                     throws HyracksDataException {
-                // TODO convert to a binary search algorithm
+                int searchIndex = 0;
+                int left = 0;
+                int right = rangeMap.getSplitCount() - 1;
+                int cmp = 0;
+                while (left <= right) {
+                    searchIndex = (left + right) / 2;
+                    cmp = compareSlotAndFields(accessor, tIndex, searchIndex);
+                    if (cmp > 0) {
+                        left = searchIndex + 1;
+                        searchIndex = left;
+                    } else if (cmp < 0) {
+                        right = searchIndex - 1;
+                        searchIndex = left;
+                    } else {
+                        return searchIndex + 1;
+                    }
+                }
+                return searchIndex;
+            }
+
+            private int compareSlotAndFields(IFrameTupleAccessor accessor, int tIndex, int fieldIndex)
+                    throws HyracksDataException {
                 int c = 0;
                 int startOffset = accessor.getTupleStartOffset(tIndex);
                 int slotLength = accessor.getFieldSlotsLength();

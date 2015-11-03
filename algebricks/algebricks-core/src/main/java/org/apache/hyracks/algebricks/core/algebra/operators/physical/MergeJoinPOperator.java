@@ -27,7 +27,6 @@ import org.apache.hyracks.algebricks.core.algebra.base.ILogicalOperator;
 import org.apache.hyracks.algebricks.core.algebra.base.IOptimizationContext;
 import org.apache.hyracks.algebricks.core.algebra.base.LogicalVariable;
 import org.apache.hyracks.algebricks.core.algebra.base.PhysicalOperatorTag;
-import org.apache.hyracks.algebricks.core.algebra.expressions.IVariableTypeEnvironment;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.AbstractBinaryJoinOperator.JoinKind;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.AbstractLogicalOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.IOperatorSchema;
@@ -43,8 +42,6 @@ import org.apache.hyracks.algebricks.core.algebra.properties.PhysicalRequirement
 import org.apache.hyracks.algebricks.core.algebra.properties.StructuralPropertiesVector;
 import org.apache.hyracks.algebricks.core.jobgen.impl.JobGenContext;
 import org.apache.hyracks.algebricks.core.jobgen.impl.JobGenHelper;
-import org.apache.hyracks.algebricks.data.IBinaryComparatorFactoryProvider;
-import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.job.IOperatorDescriptorRegistry;
 import org.apache.hyracks.dataflow.common.data.partition.range.IRangeMap;
@@ -57,18 +54,16 @@ public class MergeJoinPOperator extends AbstractJoinPOperator {
     private final int memSize;
     protected final List<LogicalVariable> keysLeftBranch;
     protected final List<LogicalVariable> keysRightBranch;
-    private final IBinaryComparatorFactoryProvider bcfp;
     private final IMergeJoinCheckerFactory mjcf;
     private IRangeMap rangeMap;
 
     public MergeJoinPOperator(JoinKind kind, JoinPartitioningType partitioningType, int memSize,
-            List<LogicalVariable> sideLeft, List<LogicalVariable> sideRight, IBinaryComparatorFactoryProvider bcfp,
-            IMergeJoinCheckerFactory mjcf, IRangeMap rangeMap) {
+            List<LogicalVariable> sideLeft, List<LogicalVariable> sideRight, IMergeJoinCheckerFactory mjcf,
+            IRangeMap rangeMap) {
         super(kind, partitioningType);
         this.memSize = memSize;
         this.keysLeftBranch = sideLeft;
         this.keysRightBranch = sideRight;
-        this.bcfp = bcfp;
         this.mjcf = mjcf;
         this.rangeMap = rangeMap;
     }
@@ -106,20 +101,22 @@ public class MergeJoinPOperator extends AbstractJoinPOperator {
         List<ILocalStructuralProperty> ispLeft = new ArrayList<ILocalStructuralProperty>();
         IPartitioningProperty ppRight = null;
         List<ILocalStructuralProperty> ispRight = new ArrayList<ILocalStructuralProperty>();
-        if (op.getExecutionMode() == AbstractLogicalOperator.ExecutionMode.PARTITIONED) {
-            ArrayList<OrderColumn> orderLeft = new ArrayList<OrderColumn>();
-            for (LogicalVariable v : keysLeftBranch) {
-                orderLeft.add(new OrderColumn(v, OrderKind.ASC));
-            }
-            ppLeft = new OrderedPartitionedProperty(orderLeft, null, rangeMap, RangePartitioningType.PROJECT);
-            ispLeft.add(new LocalOrderProperty(orderLeft));
 
-            ArrayList<OrderColumn> orderRight = new ArrayList<OrderColumn>();
-            for (LogicalVariable v : keysRightBranch) {
-                orderRight.add(new OrderColumn(v, OrderKind.ASC));
-            }
-            ppRight = new OrderedPartitionedProperty(orderRight, null, rangeMap, RangePartitioningType.SPLIT);
-            ispRight.add(new LocalOrderProperty(orderRight));
+        ArrayList<OrderColumn> orderLeft = new ArrayList<OrderColumn>();
+        for (LogicalVariable v : keysLeftBranch) {
+            orderLeft.add(new OrderColumn(v, OrderKind.ASC));
+        }
+        ispLeft.add(new LocalOrderProperty(orderLeft));
+
+        ArrayList<OrderColumn> orderRight = new ArrayList<OrderColumn>();
+        for (LogicalVariable v : keysRightBranch) {
+            orderRight.add(new OrderColumn(v, OrderKind.ASC));
+        }
+        ispRight.add(new LocalOrderProperty(orderRight));
+
+        if (op.getExecutionMode() == AbstractLogicalOperator.ExecutionMode.PARTITIONED) {
+            ppLeft = new OrderedPartitionedProperty(orderLeft, null, rangeMap, mjcf.getLeftPartitioningType());
+            ppRight = new OrderedPartitionedProperty(orderRight, null, rangeMap, mjcf.getRightPartitioningType());
         }
 
         pv[0] = new StructuralPropertiesVector(ppLeft, ispLeft);
@@ -134,20 +131,13 @@ public class MergeJoinPOperator extends AbstractJoinPOperator {
                     throws AlgebricksException {
         int[] keysLeft = JobGenHelper.variablesToFieldIndexes(keysLeftBranch, inputSchemas[0]);
         int[] keysRight = JobGenHelper.variablesToFieldIndexes(keysRightBranch, inputSchemas[1]);
-        IVariableTypeEnvironment env = context.getTypeEnvironment(op);
-        IBinaryComparatorFactory[] comparatorFactories = new IBinaryComparatorFactory[keysLeft.length];
-        int i = 0;
-        for (LogicalVariable v : keysLeftBranch) {
-            Object t = env.getVarType(v);
-            comparatorFactories[i++] = bcfp.getBinaryComparatorFactory(t, true);
-        }
 
         IOperatorDescriptorRegistry spec = builder.getJobSpec();
         RecordDescriptor recordDescriptor = JobGenHelper.mkRecordDescriptor(context.getTypeEnvironment(op), opSchema,
                 context);
 
         MergeJoinOperatorDescriptor opDesc = new MergeJoinOperatorDescriptor(spec, memSize, recordDescriptor, keysLeft,
-                keysRight, comparatorFactories, mjcf);
+                keysRight, mjcf);
         contributeOpDesc(builder, (AbstractLogicalOperator) op, opDesc);
 
         ILogicalOperator src1 = op.getInputs().get(0).getValue();

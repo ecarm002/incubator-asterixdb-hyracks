@@ -126,7 +126,7 @@ public class RangePartitionExchangePOperator extends AbstractExchangePOperator {
                 nkcf = nkcfProvider.getNormalizedKeyComputerFactory(type, order == OrderKind.ASC);
             }
             IBinaryComparatorFactoryProvider bcfp = context.getBinaryComparatorFactoryProvider();
-            comps[i] = bcfp.getBinaryComparatorFactory(type, oc.getOrder() == OrderKind.ASC);
+            comps[i] = bcfp.getRangeBinaryComparatorFactory(type, oc.getOrder() == OrderKind.ASC, rangeType);
             i++;
         }
         ITuplePartitionComputerFactory tpcf = new FieldRangePartitionComputerFactory(sortFields, comps, rangeMap,

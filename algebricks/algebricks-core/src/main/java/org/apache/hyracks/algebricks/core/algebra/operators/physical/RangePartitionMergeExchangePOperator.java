@@ -121,7 +121,8 @@ public class RangePartitionMergeExchangePOperator extends AbstractExchangePOpera
             ILogicalOperator op, IOperatorSchema opSchema, JobGenContext context) throws AlgebricksException {
         int n = partitioningFields.size();
         int[] sortFields = new int[n];
-        IBinaryComparatorFactory[] comps = new IBinaryComparatorFactory[n];
+        IBinaryComparatorFactory[] rangeComps = new IBinaryComparatorFactory[n];
+        IBinaryComparatorFactory[] binaryComps = new IBinaryComparatorFactory[n];
 
         INormalizedKeyComputerFactoryProvider nkcfProvider = context.getNormalizedKeyComputerFactoryProvider();
         INormalizedKeyComputerFactory nkcf = null;
@@ -137,12 +138,14 @@ public class RangePartitionMergeExchangePOperator extends AbstractExchangePOpera
                 nkcf = nkcfProvider.getNormalizedKeyComputerFactory(type, order == OrderKind.ASC);
             }
             IBinaryComparatorFactoryProvider bcfp = context.getBinaryComparatorFactoryProvider();
-            comps[i] = bcfp.getBinaryComparatorFactory(type, oc.getOrder() == OrderKind.ASC);
+            rangeComps[i] = bcfp.getRangeBinaryComparatorFactory(type, oc.getOrder() == OrderKind.ASC, rangeType);
+            binaryComps[i] = bcfp.getBinaryComparatorFactory(type, oc.getOrder() == OrderKind.ASC);
             i++;
         }
-        ITuplePartitionComputerFactory tpcf = new FieldRangePartitionComputerFactory(sortFields, comps, rangeMap,
+        ITuplePartitionComputerFactory tpcf = new FieldRangePartitionComputerFactory(sortFields, rangeComps, rangeMap,
                 rangeType);
-        IConnectorDescriptor conn = new MToNPartitioningMergingConnectorDescriptor(spec, tpcf, sortFields, comps, nkcf);
+        IConnectorDescriptor conn = new MToNPartitioningMergingConnectorDescriptor(spec, tpcf, sortFields, binaryComps,
+                nkcf);
         return new Pair<IConnectorDescriptor, TargetConstraint>(conn, null);
     }
 

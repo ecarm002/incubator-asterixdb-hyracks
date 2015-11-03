@@ -20,10 +20,15 @@ package org.apache.hyracks.dataflow.std.join;
 
 import java.io.Serializable;
 
-import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.hyracks.dataflow.common.data.partition.range.IRangePartitionType.RangePartitioningType;
 
 public interface IMergeJoinCheckerFactory extends Serializable {
 
-    IMergeJoinChecker createMergeJoinChecker(IBinaryComparatorFactory[] comparatorFactories, int[] keys0, int[] keys1);
+    IMergeJoinChecker createMergeJoinChecker(int[] keys0, int[] keys1, int partition) throws HyracksDataException;
+
+    RangePartitioningType getLeftPartitioningType();
+
+    RangePartitioningType getRightPartitioningType();
 
 }

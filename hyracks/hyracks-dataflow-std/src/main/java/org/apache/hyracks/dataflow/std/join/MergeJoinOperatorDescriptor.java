@@ -28,7 +28,6 @@ import org.apache.hyracks.api.dataflow.ActivityId;
 import org.apache.hyracks.api.dataflow.IActivityGraphBuilder;
 import org.apache.hyracks.api.dataflow.IOperatorNodePushable;
 import org.apache.hyracks.api.dataflow.TaskId;
-import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
@@ -50,18 +49,15 @@ import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputUnaryOutputOperato
 public class MergeJoinOperatorDescriptor extends AbstractOperatorDescriptor {
     private static final int LEFT_ACTIVITY_ID = 0;
     private static final int RIGHT_ACTIVITY_ID = 1;
-    private final IBinaryComparatorFactory[] comparatorFactories;
     private final IMergeJoinCheckerFactory mergeJoinCheckerFactory;
     private final int[] keys0;
     private final int[] keys1;
     private final int memSize;
 
     public MergeJoinOperatorDescriptor(IOperatorDescriptorRegistry spec, int memSize, RecordDescriptor recordDescriptor,
-            int[] keys0, int[] keys1, IBinaryComparatorFactory[] comparatorFactories,
-            IMergeJoinCheckerFactory mergeJoinCheckerFactory) {
+            int[] keys0, int[] keys1, IMergeJoinCheckerFactory mergeJoinCheckerFactory) {
         super(spec, 2, 1);
         recordDescriptors[0] = recordDescriptor;
-        this.comparatorFactories = comparatorFactories;
         this.mergeJoinCheckerFactory = mergeJoinCheckerFactory;
         this.keys0 = keys0;
         this.keys1 = keys1;
@@ -124,7 +120,7 @@ public class MergeJoinOperatorDescriptor extends AbstractOperatorDescriptor {
                         throws HyracksDataException {
             locks.setPartitions(nPartitions);
             final RecordDescriptor inRecordDesc = recordDescProvider.getInputRecordDescriptor(getActivityId(), 0);
-            IMergeJoinChecker mjc = mergeJoinCheckerFactory.createMergeJoinChecker(comparatorFactories, keys0, keys1);
+            IMergeJoinChecker mjc = mergeJoinCheckerFactory.createMergeJoinChecker(keys0, keys1, partition);
             return new LeftJoinerOperator(ctx, partition, inRecordDesc, mjc);
         }
 
