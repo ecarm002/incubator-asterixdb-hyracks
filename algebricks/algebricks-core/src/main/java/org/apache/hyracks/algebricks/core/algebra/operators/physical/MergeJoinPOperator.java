@@ -70,7 +70,7 @@ public class MergeJoinPOperator extends AbstractJoinPOperator {
 
     @Override
     public PhysicalOperatorTag getOperatorTag() {
-        return PhysicalOperatorTag.SORT_MERGE_INTERVAL_JOIN;
+        return PhysicalOperatorTag.MERGE_JOIN;
     }
 
     @Override
