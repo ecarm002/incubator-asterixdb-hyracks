@@ -29,7 +29,7 @@ import org.apache.hyracks.api.dataflow.value.IBinaryComparator;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import org.apache.hyracks.api.dataflow.value.INormalizedKeyComputer;
 import org.apache.hyracks.api.dataflow.value.INormalizedKeyComputerFactory;
-import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputerFactory;
+import org.apache.hyracks.api.dataflow.value.ITupleRangePartitionComputerFactory;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.IConnectorDescriptorRegistry;
@@ -42,20 +42,20 @@ import org.apache.hyracks.dataflow.std.collectors.SortMergeFrameReader;
 public class MToNRangePartitioningConnectorDescriptor extends AbstractMToNConnectorDescriptor {
     private static final long serialVersionUID = 1L;
 
-    private final ITuplePartitionComputerFactory trpcf;
+    private final ITupleRangePartitionComputerFactory trpcf;
     private final int[] sortFields;
     private final IBinaryComparatorFactory[] comparatorFactories;
     private final INormalizedKeyComputerFactory nkcFactory;
     private final boolean stable;
 
     public MToNRangePartitioningConnectorDescriptor(IConnectorDescriptorRegistry spec,
-            ITuplePartitionComputerFactory trpcf, int[] sortFields, IBinaryComparatorFactory[] comparatorFactories,
+            ITupleRangePartitionComputerFactory trpcf, int[] sortFields, IBinaryComparatorFactory[] comparatorFactories,
             INormalizedKeyComputerFactory nkcFactory) {
         this(spec, trpcf, sortFields, comparatorFactories, nkcFactory, false);
     }
 
     public MToNRangePartitioningConnectorDescriptor(IConnectorDescriptorRegistry spec,
-            ITuplePartitionComputerFactory trpcf, int[] sortFields, IBinaryComparatorFactory[] comparatorFactories,
+            ITupleRangePartitionComputerFactory trpcf, int[] sortFields, IBinaryComparatorFactory[] comparatorFactories,
             INormalizedKeyComputerFactory nkcFactory, boolean stable) {
         super(spec);
         this.trpcf = trpcf;

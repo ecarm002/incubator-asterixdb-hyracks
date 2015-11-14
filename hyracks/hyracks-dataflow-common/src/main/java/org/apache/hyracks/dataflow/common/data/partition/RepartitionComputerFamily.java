@@ -18,9 +18,6 @@
  */
 package org.apache.hyracks.dataflow.common.data.partition;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.hyracks.api.comm.IFrameTupleAccessor;
 import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputer;
 import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputerFamily;
@@ -30,14 +27,12 @@ public class RepartitionComputerFamily implements ITuplePartitionComputerFamily 
 
     private static final long serialVersionUID = 1L;
 
-    private final int factor;
-    private final ITuplePartitionComputerFamily delegateFactory;
-    private final ArrayList<Integer> repartitionMap;
+    private int factor;
+    private ITuplePartitionComputerFamily delegateFactory;
 
     public RepartitionComputerFamily(int factor, ITuplePartitionComputerFamily delegate) {
         this.factor = factor;
         this.delegateFactory = delegate;
-        this.repartitionMap = new ArrayList<Integer>();
     }
 
     @Override
@@ -47,13 +42,8 @@ public class RepartitionComputerFamily implements ITuplePartitionComputerFamily 
             private ITuplePartitionComputer delegate = delegateFactory.createPartitioner(s);
 
             @Override
-            public void partition(IFrameTupleAccessor accessor, int tIndex, int nParts, List<Integer> map)
-                    throws HyracksDataException {
-                delegate.partition(accessor, tIndex, factor * nParts, repartitionMap);
-                for (Integer h : repartitionMap) {
-                    map.add(h / factor);
-                }
-                repartitionMap.clear();
+            public int partition(IFrameTupleAccessor accessor, int tIndex, int nParts) throws HyracksDataException {
+                return delegate.partition(accessor, tIndex, factor * nParts) / factor;
             }
         };
     }

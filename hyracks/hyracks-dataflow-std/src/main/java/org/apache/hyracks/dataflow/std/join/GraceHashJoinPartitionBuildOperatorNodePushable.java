@@ -26,6 +26,7 @@ import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparator;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import org.apache.hyracks.api.dataflow.value.IBinaryHashFunctionFactory;
+import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputer;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.io.FileReference;
@@ -34,15 +35,15 @@ import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAppender;
 import org.apache.hyracks.dataflow.common.data.partition.FieldHashPartitionComputerFactory;
 import org.apache.hyracks.dataflow.common.io.RunFileWriter;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputSinkOperatorNodePushable;
-import org.apache.hyracks.dataflow.std.util.PartitionUtil;
 
-class GraceHashJoinPartitionBuildOperatorNodePushable extends AbstractUnaryInputSinkOperatorNodePushable {
+class GraceHashJoinPartitionBuildOperatorNodePushable extends
+        AbstractUnaryInputSinkOperatorNodePushable {
     private final IHyracksTaskContext ctx;
     private final Object stateId;
     private final int numPartitions;
     private final IBinaryComparator[] comparators;
     private final FrameTupleAccessor accessor0;
-    private final PartitionUtil pu;
+    private final ITuplePartitionComputer hpc;
     private final FrameTupleAppender appender;
     private IFrame[] outbufs;
     private GraceHashJoinPartitionState state;
@@ -55,8 +56,7 @@ class GraceHashJoinPartitionBuildOperatorNodePushable extends AbstractUnaryInput
         this.numPartitions = numPartitions;
         accessor0 = new FrameTupleAccessor(inRecordDescriptor);
         appender = new FrameTupleAppender();
-        pu = new PartitionUtil(new FieldHashPartitionComputerFactory(keys, hashFunctionFactories).createPartitioner(),
-                numPartitions);
+        hpc = new FieldHashPartitionComputerFactory(keys, hashFunctionFactories).createPartitioner();
         comparators = new IBinaryComparator[comparatorFactories.length];
         for (int i = 0; i < comparatorFactories.length; ++i) {
             comparators[i] = comparatorFactories[i].createBinaryComparator();
@@ -87,8 +87,8 @@ class GraceHashJoinPartitionBuildOperatorNodePushable extends AbstractUnaryInput
     private void write(int i, ByteBuffer head) throws HyracksDataException {
         RunFileWriter writer = state.getRunWriters()[i];
         if (writer == null) {
-            FileReference file = ctx.getJobletContext()
-                    .createManagedWorkspaceFile(GraceHashJoinOperatorDescriptor.class.getSimpleName());
+            FileReference file = ctx.getJobletContext().createManagedWorkspaceFile(
+                    GraceHashJoinOperatorDescriptor.class.getSimpleName());
             writer = new RunFileWriter(file, ctx.getIOManager());
             writer.open();
             state.getRunWriters()[i] = writer;
@@ -101,7 +101,7 @@ class GraceHashJoinPartitionBuildOperatorNodePushable extends AbstractUnaryInput
         accessor0.reset(buffer);
         int tCount = accessor0.getTupleCount();
         for (int i = 0; i < tCount; ++i) {
-            int entry = pu.hashPartitionKey(accessor0, i);
+            int entry = hpc.partition(accessor0, i, numPartitions);
             IFrame outbuf = outbufs[entry];
             appender.reset(outbuf, false);
             if (!appender.append(accessor0, i)) {

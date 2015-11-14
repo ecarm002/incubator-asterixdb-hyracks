@@ -30,6 +30,7 @@ import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import org.apache.hyracks.api.dataflow.value.INormalizedKeyComputer;
 import org.apache.hyracks.api.dataflow.value.INormalizedKeyComputerFactory;
 import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputerFactory;
+import org.apache.hyracks.api.dataflow.value.ITupleRangePartitionComputerFactory;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.IConnectorDescriptorRegistry;
@@ -42,20 +43,20 @@ import org.apache.hyracks.dataflow.std.collectors.SortMergeFrameReader;
 public class MToNRangePartitionMergingConnectorDescriptor extends AbstractMToNConnectorDescriptor {
     private static final long serialVersionUID = 1L;
 
-    private final ITuplePartitionComputerFactory tprcf;
+    private final ITupleRangePartitionComputerFactory tprcf;
     private final int[] sortFields;
     private final IBinaryComparatorFactory[] comparatorFactories;
     private final INormalizedKeyComputerFactory nkcFactory;
     private final boolean stable;
 
     public MToNRangePartitionMergingConnectorDescriptor(IConnectorDescriptorRegistry spec,
-            ITuplePartitionComputerFactory tprcf, int[] sortFields, IBinaryComparatorFactory[] comparatorFactories,
+            ITupleRangePartitionComputerFactory tprcf, int[] sortFields, IBinaryComparatorFactory[] comparatorFactories,
             INormalizedKeyComputerFactory nkcFactory) {
         this(spec, tprcf, sortFields, comparatorFactories, nkcFactory, false);
     }
 
     public MToNRangePartitionMergingConnectorDescriptor(IConnectorDescriptorRegistry spec,
-            ITuplePartitionComputerFactory tprcf, int[] sortFields, IBinaryComparatorFactory[] comparatorFactories,
+            ITupleRangePartitionComputerFactory tprcf, int[] sortFields, IBinaryComparatorFactory[] comparatorFactories,
             INormalizedKeyComputerFactory nkcFactory, boolean stable) {
         super(spec);
         this.tprcf = tprcf;

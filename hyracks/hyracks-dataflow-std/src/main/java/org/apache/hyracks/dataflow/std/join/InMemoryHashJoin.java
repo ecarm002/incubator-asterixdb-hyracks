@@ -38,16 +38,15 @@ import org.apache.hyracks.dataflow.common.comm.io.FrameTuplePairComparator;
 import org.apache.hyracks.dataflow.common.comm.util.FrameUtils;
 import org.apache.hyracks.dataflow.std.structures.ISerializableTable;
 import org.apache.hyracks.dataflow.std.structures.TuplePointer;
-import org.apache.hyracks.dataflow.std.util.PartitionUtil;
 
 public class InMemoryHashJoin {
 
     private final IHyracksTaskContext ctx;
     private final List<ByteBuffer> buffers;
     private final FrameTupleAccessor accessorBuild;
-    private final PartitionUtil puBuild;
+    private final ITuplePartitionComputer tpcBuild;
     private final FrameTupleAccessor accessorProbe;
-    private final PartitionUtil puProbe;
+    private final ITuplePartitionComputer tpcProbe;
     private final FrameTupleAppender appender;
     private final FrameTuplePairComparator tpComparator;
     private final boolean isLeftOuter;
@@ -78,10 +77,9 @@ public class InMemoryHashJoin {
         storedTuplePointer = new TuplePointer();
         buffers = new ArrayList<ByteBuffer>();
         this.accessorBuild = accessor1;
-        puBuild = new PartitionUtil(tpc1, tableSize);
-
+        this.tpcBuild = tpc1;
         this.accessorProbe = accessor0;
-        puProbe = new PartitionUtil(tpc0, tableSize);
+        this.tpcProbe = tpc0;
         appender = new FrameTupleAppender(new VSizeFrame(ctx));
         tpComparator = comparator;
         predEvaluator = predEval;
@@ -108,7 +106,7 @@ public class InMemoryHashJoin {
         accessorBuild.reset(buffer);
         int tCount = accessorBuild.getTupleCount();
         for (int i = 0; i < tCount; ++i) {
-            int entry = puBuild.hashPartitionKey(accessorBuild, i);
+            int entry = tpcBuild.partition(accessorBuild, i, tableSize);
             storedTuplePointer.frameIndex = bIndex;
             storedTuplePointer.tupleIndex = i;
             table.insert(entry, storedTuplePointer);
@@ -121,7 +119,7 @@ public class InMemoryHashJoin {
         for (int i = 0; i < tupleCount0; ++i) {
             boolean matchFound = false;
             if (tableSize != 0) {
-                int entry = puProbe.hashPartitionKey(accessorProbe, i);
+                int entry = tpcProbe.partition(accessorProbe, i, tableSize);
                 int offset = 0;
                 do {
                     table.getTuplePointer(entry, offset++, storedTuplePointer);
@@ -141,8 +139,9 @@ public class InMemoryHashJoin {
                 } while (true);
             }
             if (!matchFound && isLeftOuter) {
-                FrameUtils.appendConcatToWriter(writer, appender, accessorProbe, i, nullTupleBuild.getFieldEndOffsets(),
-                        nullTupleBuild.getByteArray(), 0, nullTupleBuild.getSize());
+                FrameUtils.appendConcatToWriter(writer, appender, accessorProbe, i,
+                        nullTupleBuild.getFieldEndOffsets(), nullTupleBuild.getByteArray(), 0,
+                        nullTupleBuild.getSize());
             }
         }
     }
@@ -174,9 +173,11 @@ public class InMemoryHashJoin {
 
     private void appendToResult(int probeSidetIx, int buildSidetIx, IFrameWriter writer) throws HyracksDataException {
         if (!reverseOutputOrder) {
-            FrameUtils.appendConcatToWriter(writer, appender, accessorProbe, probeSidetIx, accessorBuild, buildSidetIx);
+            FrameUtils.appendConcatToWriter(writer, appender, accessorProbe, probeSidetIx, accessorBuild,
+                    buildSidetIx);
         } else {
-            FrameUtils.appendConcatToWriter(writer, appender, accessorBuild, buildSidetIx, accessorProbe, probeSidetIx);
+            FrameUtils.appendConcatToWriter(writer, appender, accessorBuild, buildSidetIx, accessorProbe,
+                    probeSidetIx);
         }
     }
 }

@@ -18,8 +18,6 @@
  */
 package org.apache.hyracks.dataflow.common.data.partition;
 
-import java.util.List;
-
 import org.apache.hyracks.api.comm.IFrameTupleAccessor;
 import org.apache.hyracks.api.dataflow.value.IBinaryHashFunction;
 import org.apache.hyracks.api.dataflow.value.IBinaryHashFunctionFamily;
@@ -32,8 +30,7 @@ public class FieldHashPartitionComputerFamily implements ITuplePartitionComputer
     private final int[] hashFields;
     private final IBinaryHashFunctionFamily[] hashFunctionGeneratorFactories;
 
-    public FieldHashPartitionComputerFamily(int[] hashFields,
-            IBinaryHashFunctionFamily[] hashFunctionGeneratorFactories) {
+    public FieldHashPartitionComputerFamily(int[] hashFields, IBinaryHashFunctionFamily[] hashFunctionGeneratorFactories) {
         this.hashFields = hashFields;
         this.hashFunctionGeneratorFactories = hashFunctionGeneratorFactories;
     }
@@ -46,8 +43,7 @@ public class FieldHashPartitionComputerFamily implements ITuplePartitionComputer
         }
         return new ITuplePartitionComputer() {
             @Override
-            public void partition(IFrameTupleAccessor accessor, int tIndex, int nParts, List<Integer> map)
-                    throws HyracksDataException {
+            public int partition(IFrameTupleAccessor accessor, int tIndex, int nParts) throws HyracksDataException {
                 int h = 0;
                 int startOffset = accessor.getTupleStartOffset(tIndex);
                 int slotLength = accessor.getFieldSlotsLength();
@@ -56,14 +52,14 @@ public class FieldHashPartitionComputerFamily implements ITuplePartitionComputer
                     IBinaryHashFunction hashFn = hashFunctions[j];
                     int fStart = accessor.getFieldStartOffset(tIndex, fIdx);
                     int fEnd = accessor.getFieldEndOffset(tIndex, fIdx);
-                    int fh = hashFn.hash(accessor.getBuffer().array(), startOffset + slotLength + fStart,
-                            fEnd - fStart);
+                    int fh = hashFn
+                            .hash(accessor.getBuffer().array(), startOffset + slotLength + fStart, fEnd - fStart);
                     h += fh;
                 }
                 if (h < 0) {
                     h = -(h + 1);
                 }
-                map.add(h % nParts);
+                return h % nParts;
             }
         };
     }

@@ -18,8 +18,6 @@
  */
 package org.apache.hyracks.dataflow.common.data.partition;
 
-import java.util.List;
-
 import org.apache.hyracks.api.comm.IFrameTupleAccessor;
 import org.apache.hyracks.api.dataflow.value.IBinaryHashFunction;
 import org.apache.hyracks.api.dataflow.value.IBinaryHashFunctionFactory;
@@ -45,11 +43,9 @@ public class FieldHashPartitionComputerFactory implements ITuplePartitionCompute
         }
         return new ITuplePartitionComputer() {
             @Override
-            public void partition(IFrameTupleAccessor accessor, int tIndex, int nParts, List<Integer> map)
-                    throws HyracksDataException {
+            public int partition(IFrameTupleAccessor accessor, int tIndex, int nParts) throws HyracksDataException {
                 if (nParts == 1) {
-                    map.add(0);
-                    return;
+                    return 0;
                 }
                 int h = 0;
                 int startOffset = accessor.getTupleStartOffset(tIndex);
@@ -59,14 +55,14 @@ public class FieldHashPartitionComputerFactory implements ITuplePartitionCompute
                     IBinaryHashFunction hashFn = hashFunctions[j];
                     int fStart = accessor.getFieldStartOffset(tIndex, fIdx);
                     int fEnd = accessor.getFieldEndOffset(tIndex, fIdx);
-                    int fh = hashFn.hash(accessor.getBuffer().array(), startOffset + slotLength + fStart,
-                            fEnd - fStart);
+                    int fh = hashFn
+                            .hash(accessor.getBuffer().array(), startOffset + slotLength + fStart, fEnd - fStart);
                     h = h * 31 + fh;
                 }
                 if (h < 0) {
                     h = -(h + 1);
                 }
-                map.add(h % nParts);
+                return h % nParts;
             }
         };
     }

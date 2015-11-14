@@ -30,6 +30,7 @@ import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparator;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import org.apache.hyracks.api.dataflow.value.ISerializerDeserializer;
+import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputer;
 import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputerFactory;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
@@ -41,7 +42,6 @@ import org.apache.hyracks.dataflow.common.comm.util.FrameUtils;
 import org.apache.hyracks.dataflow.std.group.AggregateState;
 import org.apache.hyracks.dataflow.std.group.IAggregatorDescriptor;
 import org.apache.hyracks.dataflow.std.group.IAggregatorDescriptorFactory;
-import org.apache.hyracks.dataflow.std.util.PartitionUtil;
 
 class GroupingHashTable {
     /**
@@ -88,7 +88,7 @@ class GroupingHashTable {
     private final int[] keys;
     private final IBinaryComparator[] comparators;
     private final FrameTuplePairComparator ftpc;
-    private final PartitionUtil pu;
+    private final ITuplePartitionComputer tpc;
     private final IAggregatorDescriptor aggregator;
 
     private final IFrame outputFrame;
@@ -101,7 +101,7 @@ class GroupingHashTable {
     GroupingHashTable(IHyracksTaskContext ctx, int[] fields, IBinaryComparatorFactory[] comparatorFactories,
             ITuplePartitionComputerFactory tpcf, IAggregatorDescriptorFactory aggregatorFactory,
             RecordDescriptor inRecordDescriptor, RecordDescriptor outRecordDescriptor, int tableSize)
-                    throws HyracksDataException {
+            throws HyracksDataException {
         this.ctx = ctx;
 
         buffers = new ArrayList<>();
@@ -121,8 +121,7 @@ class GroupingHashTable {
             comparators[i] = comparatorFactories[i].createBinaryComparator();
         }
         ftpc = new FrameTuplePairComparator(fields, storedKeys, comparators);
-
-        pu = new PartitionUtil(tpcf.createPartitioner(), tableSize);
+        tpc = tpcf.createPartitioner();
 
         int[] keyFieldsInPartialResults = new int[fields.length];
         for (int i = 0; i < keyFieldsInPartialResults.length; i++) {
@@ -159,8 +158,8 @@ class GroupingHashTable {
         ++lastBIndex;
     }
 
-    void insert(FrameTupleAccessor accessor, int tIndex) throws HyracksDataException {
-        int entry = pu.hashPartitionKey(accessor, tIndex);
+    void insert(FrameTupleAccessor accessor, int tIndex) throws Exception {
+        int entry = tpc.partition(accessor, tIndex, table.length);
         Link link = table[entry];
         if (link == null) {
             link = table[entry] = new Link();
@@ -191,8 +190,8 @@ class GroupingHashTable {
 
             aggregator.init(stateTupleBuilder, accessor, tIndex, newState);
 
-            if (!appender.appendSkipEmptyField(stateTupleBuilder.getFieldEndOffsets(), stateTupleBuilder.getByteArray(),
-                    0, stateTupleBuilder.getSize())) {
+            if (!appender.appendSkipEmptyField(stateTupleBuilder.getFieldEndOffsets(),
+                    stateTupleBuilder.getByteArray(), 0, stateTupleBuilder.getSize())) {
                 addNewBuffer();
                 if (!appender.appendSkipEmptyField(stateTupleBuilder.getFieldEndOffsets(),
                         stateTupleBuilder.getByteArray(), 0, stateTupleBuilder.getSize())) {

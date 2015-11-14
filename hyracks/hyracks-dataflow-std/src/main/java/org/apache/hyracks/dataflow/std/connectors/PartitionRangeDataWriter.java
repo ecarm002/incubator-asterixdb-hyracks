@@ -23,17 +23,17 @@ import java.util.ArrayList;
 
 import org.apache.hyracks.api.comm.IPartitionWriterFactory;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
-import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputer;
+import org.apache.hyracks.api.dataflow.value.ITupleRangePartitionComputer;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.common.comm.util.FrameUtils;
 
 public class PartitionRangeDataWriter extends AbstractPartitionDataWriter {
-    private final ITuplePartitionComputer tpc;
+    private final ITupleRangePartitionComputer tpc;
     private final ArrayList<Integer> map;
 
     public PartitionRangeDataWriter(IHyracksTaskContext ctx, int consumerPartitionCount,
-            IPartitionWriterFactory pwFactory, RecordDescriptor recordDescriptor, ITuplePartitionComputer tpc)
+            IPartitionWriterFactory pwFactory, RecordDescriptor recordDescriptor, ITupleRangePartitionComputer tpc)
                     throws HyracksDataException {
         super(ctx, consumerPartitionCount, pwFactory, recordDescriptor);
         this.tpc = tpc;

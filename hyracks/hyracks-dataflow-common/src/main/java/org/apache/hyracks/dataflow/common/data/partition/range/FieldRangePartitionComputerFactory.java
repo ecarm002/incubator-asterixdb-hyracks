@@ -23,12 +23,12 @@ import java.util.List;
 import org.apache.hyracks.api.comm.IFrameTupleAccessor;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparator;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
-import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputer;
-import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputerFactory;
+import org.apache.hyracks.api.dataflow.value.ITupleRangePartitionComputer;
+import org.apache.hyracks.api.dataflow.value.ITupleRangePartitionComputerFactory;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.common.data.partition.range.IRangePartitionType.RangePartitioningType;
 
-public class FieldRangePartitionComputerFactory implements ITuplePartitionComputerFactory {
+public class FieldRangePartitionComputerFactory implements ITupleRangePartitionComputerFactory {
     private static final long serialVersionUID = 1L;
     private final int[] rangeFields;
     private IRangeMap rangeMap;
@@ -43,12 +43,12 @@ public class FieldRangePartitionComputerFactory implements ITuplePartitionComput
         this.rangeType = rangeType;
     }
 
-    public ITuplePartitionComputer createPartitioner() {
+    public ITupleRangePartitionComputer createPartitioner() {
         final IBinaryComparator[] comparators = new IBinaryComparator[comparatorFactories.length];
         for (int i = 0; i < comparatorFactories.length; ++i) {
             comparators[i] = comparatorFactories[i].createBinaryComparator();
         }
-        return new ITuplePartitionComputer() {
+        return new ITupleRangePartitionComputer() {
             private int partionCount;
             private double rangesPerPart = 1;
 

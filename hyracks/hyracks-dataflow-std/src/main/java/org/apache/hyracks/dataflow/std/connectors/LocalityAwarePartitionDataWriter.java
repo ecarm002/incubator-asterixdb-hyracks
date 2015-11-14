@@ -20,7 +20,6 @@ package org.apache.hyracks.dataflow.std.connectors;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 
 import org.apache.hyracks.api.comm.IFrameTupleAppender;
 import org.apache.hyracks.api.comm.IFrameWriter;
@@ -40,7 +39,6 @@ public class LocalityAwarePartitionDataWriter implements IFrameWriter {
     private final IFrameTupleAppender[] appenders;
     private final FrameTupleAccessor tupleAccessor;
     private final ITuplePartitionComputer tpc;
-    private final ArrayList<Integer> map;
 
     public LocalityAwarePartitionDataWriter(IHyracksTaskContext ctx, IPartitionWriterFactory pwFactory,
             RecordDescriptor recordDescriptor, ITuplePartitionComputer tpc, int nConsumerPartitions,
@@ -59,12 +57,11 @@ public class LocalityAwarePartitionDataWriter implements IFrameWriter {
         }
         tupleAccessor = new FrameTupleAccessor(recordDescriptor);
         this.tpc = tpc;
-        map = new ArrayList<Integer>();
     }
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.apache.hyracks.api.comm.IFrameWriter#open()
      */
     @Override
@@ -76,7 +73,7 @@ public class LocalityAwarePartitionDataWriter implements IFrameWriter {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.apache.hyracks.api.comm.IFrameWriter#nextFrame(java.nio.ByteBuffer)
      */
@@ -85,21 +82,14 @@ public class LocalityAwarePartitionDataWriter implements IFrameWriter {
         tupleAccessor.reset(buffer);
         int tupleCount = tupleAccessor.getTupleCount();
         for (int i = 0; i < tupleCount; ++i) {
-            if (pWriters.length == 1) {
-                FrameUtils.appendToWriter(pWriters[0], appenders[0], tupleAccessor, i);
-            } else {
-                tpc.partition(tupleAccessor, i, pWriters.length, map);
-                for (Integer p : map) {
-                    FrameUtils.appendToWriter(pWriters[p], appenders[p], tupleAccessor, i);
-                }
-                map.clear();
-            }
+            int h = pWriters.length == 1 ? 0 : tpc.partition(tupleAccessor, i, pWriters.length);
+            FrameUtils.appendToWriter(pWriters[h], appenders[h], tupleAccessor, i);
         }
     }
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.apache.hyracks.api.comm.IFrameWriter#fail()
      */
     @Override
@@ -111,7 +101,7 @@ public class LocalityAwarePartitionDataWriter implements IFrameWriter {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.apache.hyracks.api.comm.IFrameWriter#close()
      */
     @Override

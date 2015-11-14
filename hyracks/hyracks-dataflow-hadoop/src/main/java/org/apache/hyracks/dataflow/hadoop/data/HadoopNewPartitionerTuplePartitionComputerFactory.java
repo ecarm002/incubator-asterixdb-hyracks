@@ -19,7 +19,6 @@
 package org.apache.hyracks.dataflow.hadoop.data;
 
 import java.io.DataInputStream;
-import java.util.List;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Partitioner;
@@ -31,8 +30,8 @@ import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputerFactory;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.common.comm.util.ByteBufferInputStream;
 
-public class HadoopNewPartitionerTuplePartitionComputerFactory<K extends Writable, V extends Writable>
-        extends AbstractClassBasedDelegate<Partitioner<K, V>>implements ITuplePartitionComputerFactory {
+public class HadoopNewPartitionerTuplePartitionComputerFactory<K extends Writable, V extends Writable> extends
+        AbstractClassBasedDelegate<Partitioner<K, V>> implements ITuplePartitionComputerFactory {
     private static final long serialVersionUID = 1L;
     private final ISerializerDeserializer<K> keyIO;
     private final ISerializerDeserializer<V> valueIO;
@@ -51,8 +50,7 @@ public class HadoopNewPartitionerTuplePartitionComputerFactory<K extends Writabl
             private final DataInputStream dis = new DataInputStream(bbis);
 
             @Override
-            public void partition(IFrameTupleAccessor accessor, int tIndex, int nParts, List<Integer> map)
-                    throws HyracksDataException {
+            public int partition(IFrameTupleAccessor accessor, int tIndex, int nParts) throws HyracksDataException {
                 int keyStart = accessor.getTupleStartOffset(tIndex) + accessor.getFieldSlotsLength()
                         + accessor.getFieldStartOffset(tIndex, 0);
                 bbis.setByteBuffer(accessor.getBuffer(), keyStart);
@@ -61,7 +59,7 @@ public class HadoopNewPartitionerTuplePartitionComputerFactory<K extends Writabl
                         + accessor.getFieldStartOffset(tIndex, 1);
                 bbis.setByteBuffer(accessor.getBuffer(), valueStart);
                 V value = valueIO.deserialize(dis);
-                map.add(instance.getPartition(key, value, nParts));
+                return instance.getPartition(key, value, nParts);
             }
         };
     }

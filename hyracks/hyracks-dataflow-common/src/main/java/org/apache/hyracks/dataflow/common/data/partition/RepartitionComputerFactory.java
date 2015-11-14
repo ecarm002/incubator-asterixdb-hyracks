@@ -18,9 +18,6 @@
  */
 package org.apache.hyracks.dataflow.common.data.partition;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.hyracks.api.comm.IFrameTupleAccessor;
 import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputer;
 import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputerFactory;
@@ -31,12 +28,10 @@ public class RepartitionComputerFactory implements ITuplePartitionComputerFactor
 
     private int factor;
     private ITuplePartitionComputerFactory delegateFactory;
-    private final ArrayList<Integer> repartitionMap;
 
     public RepartitionComputerFactory(int factor, ITuplePartitionComputerFactory delegate) {
         this.factor = factor;
         this.delegateFactory = delegate;
-        this.repartitionMap = new ArrayList<Integer>();
     }
 
     @Override
@@ -45,13 +40,8 @@ public class RepartitionComputerFactory implements ITuplePartitionComputerFactor
             private ITuplePartitionComputer delegate = delegateFactory.createPartitioner();
 
             @Override
-            public void partition(IFrameTupleAccessor accessor, int tIndex, int nParts, List<Integer> map)
-                    throws HyracksDataException {
-                delegate.partition(accessor, tIndex, factor * nParts, repartitionMap);
-                for (Integer h : repartitionMap) {
-                    map.add(h / factor);
-                }
-                repartitionMap.clear();
+            public int partition(IFrameTupleAccessor accessor, int tIndex, int nParts) throws HyracksDataException {
+                return delegate.partition(accessor, tIndex, factor * nParts) / factor;
             }
         };
     }

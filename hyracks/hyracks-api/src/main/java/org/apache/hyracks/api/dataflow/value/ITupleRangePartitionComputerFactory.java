@@ -18,9 +18,8 @@
  */
 package org.apache.hyracks.api.dataflow.value;
 
-import org.apache.hyracks.api.comm.IFrameTupleAccessor;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
+import java.io.Serializable;
 
-public interface ITuplePartitionComputer {
-    public int partition(IFrameTupleAccessor accessor, int tIndex, int nParts) throws HyracksDataException;
+public interface ITupleRangePartitionComputerFactory extends Serializable {
+    public ITupleRangePartitionComputer createPartitioner();
 }
