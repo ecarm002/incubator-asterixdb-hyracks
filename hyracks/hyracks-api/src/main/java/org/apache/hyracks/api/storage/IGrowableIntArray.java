@@ -16,13 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.hyracks.api.dataflow.value;
+package org.apache.hyracks.api.storage;
 
-import org.apache.hyracks.api.comm.IFrameTupleAccessor;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
-import org.apache.hyracks.api.storage.IGrowableIntArray;
+public interface IGrowableIntArray {
 
-public interface ITupleRangePartitionComputer {
-    public void partition(IFrameTupleAccessor accessor, int tIndex, int nParts, IGrowableIntArray map)
-            throws HyracksDataException;
+    int size();
+
+    void add(int i);
+
+    int get(int i);
+
+    void clear();
+
 }

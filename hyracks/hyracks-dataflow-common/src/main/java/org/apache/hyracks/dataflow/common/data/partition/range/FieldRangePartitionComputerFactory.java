@@ -18,14 +18,13 @@
  */
 package org.apache.hyracks.dataflow.common.data.partition.range;
 
-import java.util.List;
-
 import org.apache.hyracks.api.comm.IFrameTupleAccessor;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparator;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import org.apache.hyracks.api.dataflow.value.ITupleRangePartitionComputer;
 import org.apache.hyracks.api.dataflow.value.ITupleRangePartitionComputerFactory;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.hyracks.api.storage.IGrowableIntArray;
 import org.apache.hyracks.dataflow.common.data.partition.range.IRangePartitionType.RangePartitioningType;
 
 public class FieldRangePartitionComputerFactory implements ITupleRangePartitionComputerFactory {
@@ -55,7 +54,7 @@ public class FieldRangePartitionComputerFactory implements ITupleRangePartitionC
             /*
              * Determine the range partition.
              */
-            public void partition(IFrameTupleAccessor accessor, int tIndex, int nParts, List<Integer> map)
+            public void partition(IFrameTupleAccessor accessor, int tIndex, int nParts, IGrowableIntArray map)
                     throws HyracksDataException {
                 if (nParts == 1) {
                     map.add(0);
@@ -74,7 +73,7 @@ public class FieldRangePartitionComputerFactory implements ITupleRangePartitionC
             /*
              * Determine the range partitions.
              */
-            private void getRangePartitions(IFrameTupleAccessor accessor, int tIndex, List<Integer> map)
+            private void getRangePartitions(IFrameTupleAccessor accessor, int tIndex, IGrowableIntArray map)
                     throws HyracksDataException {
                 int suggestedPartition = binarySearchRangePartition(accessor, tIndex);
                 addPartition(suggestedPartition, map);
@@ -94,7 +93,7 @@ public class FieldRangePartitionComputerFactory implements ITupleRangePartitionC
                 }
             }
 
-            private void addPartition(int partition, List<Integer> map) {
+            private void addPartition(int partition, IGrowableIntArray map) {
                 map.add((int) Math.floor(partition / rangesPerPart));
             }
 
