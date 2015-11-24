@@ -75,7 +75,7 @@ public class HybridHashJoinPOperator extends AbstractHashJoinPOperator {
 
         LOGGER.fine("HybridHashJoinPOperator constructed with: JoinKind=" + kind + ", JoinPartitioningType="
                 + partitioningType + ", List<LogicalVariable>=" + sideLeftOfEqualities + ", List<LogicalVariable>="
-                + sideRightOfEqualities + ", int memSizeInFrames=" + memSizeInFrames + ", int maxInputSize0InFrames="
+                + sideRightOfEqualities + ", int memSizeInFrames=" + memSizeInFrames + ", int maxInputSizeInFrames="
                 + maxInputSizeInFrames + ", int aveRecordsPerFrame=" + aveRecordsPerFrame + ", double fudgeFactor="
                 + fudgeFactor + ".");
     }
@@ -106,14 +106,14 @@ public class HybridHashJoinPOperator extends AbstractHashJoinPOperator {
     @Override
     public void contributeRuntimeOperator(IHyracksJobBuilder builder, JobGenContext context, ILogicalOperator op,
             IOperatorSchema propagatedSchema, IOperatorSchema[] inputSchemas, IOperatorSchema outerPlanSchema)
-            throws AlgebricksException {
+                    throws AlgebricksException {
         int[] keysLeft = JobGenHelper.variablesToFieldIndexes(keysLeftBranch, inputSchemas[0]);
         int[] keysRight = JobGenHelper.variablesToFieldIndexes(keysRightBranch, inputSchemas[1]);
         IVariableTypeEnvironment env = context.getTypeEnvironment(op);
-        IBinaryHashFunctionFactory[] hashFunFactories = JobGenHelper.variablesToBinaryHashFunctionFactories(
-                keysLeftBranch, env, context);
-        IBinaryHashFunctionFamily[] hashFunFamilies = JobGenHelper.variablesToBinaryHashFunctionFamilies(
-                keysLeftBranch, env, context);
+        IBinaryHashFunctionFactory[] hashFunFactories = JobGenHelper
+                .variablesToBinaryHashFunctionFactories(keysLeftBranch, env, context);
+        IBinaryHashFunctionFamily[] hashFunFamilies = JobGenHelper.variablesToBinaryHashFunctionFamilies(keysLeftBranch,
+                env, context);
         IBinaryComparatorFactory[] comparatorFactories = new IBinaryComparatorFactory[keysLeft.length];
         int i = 0;
         IBinaryComparatorFactoryProvider bcfp = context.getBinaryComparatorFactoryProvider();
@@ -173,9 +173,10 @@ public class HybridHashJoinPOperator extends AbstractHashJoinPOperator {
                     case INNER: {
                         opDesc = new OptimizedHybridHashJoinOperatorDescriptor(spec, getMemSizeInFrames(),
                                 maxInputBuildSizeInFrames, getFudgeFactor(), keysLeft, keysRight, hashFunFamilies,
-                                comparatorFactories, recDescriptor, new JoinMultiComparatorFactory(comparatorFactories,
-                                        keysLeft, keysRight), new JoinMultiComparatorFactory(comparatorFactories,
-                                        keysRight, keysLeft), predEvaluatorFactory);
+                                comparatorFactories, recDescriptor,
+                                new JoinMultiComparatorFactory(comparatorFactories, keysLeft, keysRight),
+                                new JoinMultiComparatorFactory(comparatorFactories, keysRight, keysLeft),
+                                predEvaluatorFactory);
                         break;
                     }
                     case LEFT_OUTER: {
@@ -185,9 +186,10 @@ public class HybridHashJoinPOperator extends AbstractHashJoinPOperator {
                         }
                         opDesc = new OptimizedHybridHashJoinOperatorDescriptor(spec, getMemSizeInFrames(),
                                 maxInputBuildSizeInFrames, getFudgeFactor(), keysLeft, keysRight, hashFunFamilies,
-                                comparatorFactories, recDescriptor, new JoinMultiComparatorFactory(comparatorFactories,
-                                        keysLeft, keysRight), new JoinMultiComparatorFactory(comparatorFactories,
-                                        keysRight, keysLeft), predEvaluatorFactory, true, nullWriterFactories);
+                                comparatorFactories, recDescriptor,
+                                new JoinMultiComparatorFactory(comparatorFactories, keysLeft, keysRight),
+                                new JoinMultiComparatorFactory(comparatorFactories, keysRight, keysLeft),
+                                predEvaluatorFactory, true, nullWriterFactories);
                         break;
                     }
                     default: {
