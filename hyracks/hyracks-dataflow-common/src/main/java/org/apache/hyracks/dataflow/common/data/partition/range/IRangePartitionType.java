@@ -16,16 +16,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.hyracks.algebricks.data;
+package org.apache.hyracks.dataflow.common.data.partition.range;
 
-import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
-import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
-import org.apache.hyracks.dataflow.common.data.partition.range.IRangePartitionType.RangePartitioningType;
-
-public interface IBinaryComparatorFactoryProvider {
-    public IBinaryComparatorFactory getBinaryComparatorFactory(Object type, boolean ascending)
-            throws AlgebricksException;
-
-    public IBinaryComparatorFactory getRangeBinaryComparatorFactory(Object type, boolean ascending,
-            RangePartitioningType rangeType) throws AlgebricksException;
+public interface IRangePartitionType {
+    public enum RangePartitioningType {
+        /**
+         * Partitioning is determined by finding the range partition where the first data point lies.
+         */
+        PROJECT,
+        /**
+         * Partitioning is determined by finding all the range partitions where the data has a point.
+         */
+        SPLIT,
+        /**
+         * Partitioning is determined by finding all the range partitions where the data has a point
+         * or comes after the data point.
+         */
+        REPLICATE
+    }
 }
