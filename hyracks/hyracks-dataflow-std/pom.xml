@@ -17,8 +17,10 @@
  ! under the License.
  !-->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project
+    xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <artifactId>hyracks-dataflow-std</artifactId>
     <name>hyracks-dataflow-std</name>
@@ -38,7 +40,6 @@
         </license>
     </licenses>
 
-
     <dependencies>
         <dependency>
             <groupId>org.apache.hyracks</groupId>
@@ -50,6 +51,13 @@
         <dependency>
             <groupId>org.apache.hyracks</groupId>
             <artifactId>hyracks-dataflow-common</artifactId>
+            <version>0.2.17-SNAPSHOT</version>
+            <type>jar</type>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hyracks</groupId>
+            <artifactId>hyracks-storage-common</artifactId>
             <version>0.2.17-SNAPSHOT</version>
             <type>jar</type>
             <scope>compile</scope>

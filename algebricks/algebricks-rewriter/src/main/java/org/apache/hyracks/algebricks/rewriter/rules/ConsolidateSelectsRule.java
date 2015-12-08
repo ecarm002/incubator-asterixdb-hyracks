@@ -36,11 +36,9 @@ import org.apache.hyracks.algebricks.core.rewriter.base.IAlgebraicRewriteRule;
 
 /**
  * Matches the following operator pattern:
- * (select) <-- ((assign)* <-- (select)*)+
- *
+ * (select) &lt;-- ((assign)* &lt;-- (select)*)+
  * Consolidates the selects to:
- * (select) <-- (assign)*
- *
+ * (select) &lt;-- (assign)*
  */
 public class ConsolidateSelectsRule implements IAlgebraicRewriteRule {
 
@@ -51,7 +49,7 @@ public class ConsolidateSelectsRule implements IAlgebraicRewriteRule {
 
     @Override
     public boolean rewritePre(Mutable<ILogicalOperator> opRef, IOptimizationContext context) throws AlgebricksException {
-    	AbstractLogicalOperator op = (AbstractLogicalOperator) opRef.getValue();
+        AbstractLogicalOperator op = (AbstractLogicalOperator) opRef.getValue();
         if (op.getOperatorTag() != LogicalOperatorTag.SELECT) {
             return false;
         }
@@ -63,24 +61,24 @@ public class ConsolidateSelectsRule implements IAlgebraicRewriteRule {
         AbstractLogicalOperator topMostOp = null;
         AbstractLogicalOperator selectParent = null;
         AbstractLogicalOperator nextSelect = firstSelect;
-		do {
-        	// Skip through assigns.
+        do {
+            // Skip through assigns.
             do {
-            	selectParent = nextSelect;
-            	nextSelect = (AbstractLogicalOperator) selectParent.getInputs().get(0).getValue();
+                selectParent = nextSelect;
+                nextSelect = (AbstractLogicalOperator) selectParent.getInputs().get(0).getValue();
             } while (nextSelect.getOperatorTag() == LogicalOperatorTag.ASSIGN);
             // Stop if the child op is not a select.
             if (nextSelect.getOperatorTag() != LogicalOperatorTag.SELECT) {
-        		break;
-        	}
+                break;
+            }
             // Remember the top-most op that we are not removing.
             topMostOp = selectParent;
 
             // Initialize the new conjuncts, if necessary.
             if (conj == null) {
-            	conj = new ScalarFunctionCallExpression(andFn);
-            	// Add the first select's condition.
-            	conj.getArguments().add(new MutableObject<ILogicalExpression>(firstSelect.getCondition().getValue()));
+                conj = new ScalarFunctionCallExpression(andFn);
+                // Add the first select's condition.
+                conj.getArguments().add(new MutableObject<ILogicalExpression>(firstSelect.getCondition().getValue()));
             }
 
             // Consolidate all following selects.
@@ -93,16 +91,16 @@ public class ConsolidateSelectsRule implements IAlgebraicRewriteRule {
 
             // Hook up the input of the top-most remaining op if necessary.
             if (topMostOp.getOperatorTag() == LogicalOperatorTag.ASSIGN || topMostOp == firstSelect) {
-            	topMostOp.getInputs().set(0, selectParent.getInputs().get(0));
+                topMostOp.getInputs().set(0, selectParent.getInputs().get(0));
             }
 
             // Prepare for next iteration.
             nextSelect = selectParent;
         } while (true);
 
-		// Did we consolidate any selects?
+        // Did we consolidate any selects?
         if (conj == null) {
-        	return false;
+            return false;
         }
 
         // Set the new conjuncts.
