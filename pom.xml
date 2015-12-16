@@ -176,6 +176,7 @@
            <exclude>**/*.prefs</exclude>
            <exclude>**/.classpath</exclude>
            <exclude>**/.project</exclude>
+           <exclude>**/.settings/*</exclude>
       </excludes>
         </configuration>
       </plugin>
