@@ -35,7 +35,7 @@ public abstract class AbstractPropagatePropertiesForUsedVariablesPOperator exten
         IPartitioningProperty pp = op2.getDeliveredPhysicalProperties().getPartitioningProperty();
         List<ILocalStructuralProperty> downPropsLocal = op2.getDeliveredPhysicalProperties().getLocalProperties();
         List<ILocalStructuralProperty> propsLocal = new ArrayList<ILocalStructuralProperty>();
-        for (ILocalStructuralProperty lsp : downPropsLocal) {
+        for (ILocalStructuralProperty lsp : safe(downPropsLocal)) {
             LinkedList<LogicalVariable> cols = new LinkedList<LogicalVariable>();
             lsp.getColumns(cols);
             ILocalStructuralProperty propagatedProp = lsp.retainVariables(usedVariables);
@@ -44,5 +44,9 @@ public abstract class AbstractPropagatePropertiesForUsedVariablesPOperator exten
             }
         }
         deliveredProperties = new StructuralPropertiesVector(pp, propsLocal);
+    }
+
+    public static List<ILocalStructuralProperty> safe(List<ILocalStructuralProperty> other) {
+        return other == null ? new ArrayList<ILocalStructuralProperty>() : other;
     }
 }
