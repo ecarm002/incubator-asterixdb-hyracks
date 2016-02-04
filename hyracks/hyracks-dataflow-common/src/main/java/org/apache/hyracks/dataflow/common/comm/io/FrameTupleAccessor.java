@@ -126,6 +126,7 @@ public class FrameTupleAccessor implements IFrameTupleAccessor {
             prettyPrint(i, bbis, dis, sb);
         }
         System.err.println(sb.toString());
+        System.err.flush();
     }
 
     public void prettyPrint() {
@@ -135,13 +136,18 @@ public class FrameTupleAccessor implements IFrameTupleAccessor {
     protected void prettyPrint(int tid, ByteBufferInputStream bbis, DataInputStream dis, StringBuilder sb) {
         sb.append(" tid" + tid + ":(" + getTupleStartOffset(tid) + ", " + getTupleEndOffset(tid) + ")[");
         for (int j = 0; j < getFieldCount(); ++j) {
+            sb.append(" ");
+            if (j > 0){
+                sb.append("|");
+            }
             sb.append("f" + j + ":(" + getFieldStartOffset(tid, j) + ", " + getFieldEndOffset(tid, j) + ") ");
             sb.append("{");
             bbis.setByteBuffer(buffer, getTupleStartOffset(tid) + getFieldSlotsLength() + getFieldStartOffset(tid, j));
             try {
                 sb.append(recordDescriptor.getFields()[j].deserialize(dis));
-            } catch (HyracksDataException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
+                sb.append("ExceptionWhenDeserialzingField ");
             }
             sb.append("}");
         }

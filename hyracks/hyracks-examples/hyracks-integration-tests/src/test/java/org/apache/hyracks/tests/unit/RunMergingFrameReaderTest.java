@@ -58,7 +58,7 @@ import org.apache.hyracks.dataflow.common.data.marshalling.UTF8StringSerializerD
 import org.apache.hyracks.dataflow.common.io.RunFileReader;
 import org.apache.hyracks.dataflow.std.sort.Algorithm;
 import org.apache.hyracks.dataflow.std.sort.ExternalSortRunGenerator;
-import org.apache.hyracks.dataflow.std.sort.RunAndMaxFrameSizePair;
+import org.apache.hyracks.dataflow.std.structures.RunAndMaxFrameSizePair;
 import org.apache.hyracks.dataflow.std.sort.RunMergingFrameReader;
 import org.apache.hyracks.dataflow.std.sort.util.GroupVSizeFrame;
 import org.junit.Test;

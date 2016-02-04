@@ -30,16 +30,16 @@ import org.apache.hyracks.api.io.FileReference;
 import org.apache.hyracks.dataflow.common.io.RunFileWriter;
 import org.apache.hyracks.dataflow.std.group.IAggregatorDescriptorFactory;
 import org.apache.hyracks.dataflow.std.group.preclustered.PreclusteredGroupWriter;
-import org.apache.hyracks.dataflow.std.sort.ExternalSortRunMerger;
+import org.apache.hyracks.dataflow.std.sort.AbstractExternalSortRunMerger;
 import org.apache.hyracks.dataflow.std.sort.ISorter;
-import org.apache.hyracks.dataflow.std.sort.RunAndMaxFrameSizePair;
+import org.apache.hyracks.dataflow.std.structures.RunAndMaxFrameSizePair;
 
 /**
  * Group-by aggregation is pushed into multi-pass merge of external sort.
  *
  * @author yingyib
  */
-public class ExternalSortGroupByRunMerger extends ExternalSortRunMerger {
+public class ExternalSortGroupByRunMerger extends AbstractExternalSortRunMerger {
 
     private final RecordDescriptor inputRecordDesc;
     private final RecordDescriptor partialAggRecordDesc;
@@ -60,8 +60,8 @@ public class ExternalSortGroupByRunMerger extends ExternalSortRunMerger {
             INormalizedKeyComputer nmk, IBinaryComparator[] comparators,
             IAggregatorDescriptorFactory partialAggregatorFactory, IAggregatorDescriptorFactory aggregatorFactory,
             boolean localStage) {
-        super(ctx, frameSorter, runs, sortFields, comparators, nmk, partialAggRecordDesc, framesLimit,
-                writer);
+        super(ctx, frameSorter, runs, comparators, nmk, partialAggRecordDesc, framesLimit, writer);
+
         this.inputRecordDesc = inRecordDesc;
         this.partialAggRecordDesc = partialAggRecordDesc;
         this.outRecordDesc = outRecordDesc;

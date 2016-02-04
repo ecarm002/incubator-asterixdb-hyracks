@@ -47,6 +47,7 @@ import org.apache.hyracks.dataflow.std.base.AbstractOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.base.AbstractStateObject;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputSinkOperatorNodePushable;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryOutputSourceOperatorNodePushable;
+import org.apache.hyracks.dataflow.std.structures.RunAndMaxFrameSizePair;
 
 public abstract class AbstractSorterOperatorDescriptor extends AbstractOperatorDescriptor {
 
@@ -166,7 +167,7 @@ public abstract class AbstractSorterOperatorDescriptor extends AbstractOperatorD
             super(id);
         }
 
-        protected abstract ExternalSortRunMerger getSortRunMerger(IHyracksTaskContext ctx,
+        protected abstract AbstractExternalSortRunMerger getSortRunMerger(IHyracksTaskContext ctx,
                 IRecordDescriptorProvider recordDescProvider, IFrameWriter writer, ISorter sorter,
                 List<RunAndMaxFrameSizePair> runs, IBinaryComparator[] comparators, INormalizedKeyComputer nmkComputer,
                 int necessaryFrames);
@@ -189,8 +190,8 @@ public abstract class AbstractSorterOperatorDescriptor extends AbstractOperatorD
                     INormalizedKeyComputer nmkComputer = firstKeyNormalizerFactory == null ?
                             null :
                             firstKeyNormalizerFactory.createNormalizedKeyComputer();
-                    ExternalSortRunMerger merger = getSortRunMerger(ctx, recordDescProvider, writer, sorter, runs,
-                            comparators, nmkComputer, framesLimit);
+                    AbstractExternalSortRunMerger merger = getSortRunMerger(ctx, recordDescProvider, writer, sorter,
+                            runs, comparators, nmkComputer, framesLimit);
                     merger.process();
                 }
             };

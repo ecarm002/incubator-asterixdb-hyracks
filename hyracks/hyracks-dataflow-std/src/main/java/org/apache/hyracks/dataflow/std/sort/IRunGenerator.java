@@ -21,6 +21,7 @@ package org.apache.hyracks.dataflow.std.sort;
 import java.util.List;
 
 import org.apache.hyracks.api.comm.IFrameWriter;
+import org.apache.hyracks.dataflow.std.structures.RunAndMaxFrameSizePair;
 
 /**
  * @author pouria

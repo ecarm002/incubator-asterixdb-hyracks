@@ -26,19 +26,17 @@ public interface IAggregatorDescriptor {
 
     /**
      * Create an aggregate state
-     * 
+     *
      * @return
      */
     public AggregateState createAggregateStates();
 
     /**
      * Initialize the state based on the input tuple.
-     * 
+     *
      * @param accessor
      * @param tIndex
-     * @param fieldOutput
-     *            The data output for the frame containing the state. This may
-     *            be null, if the state is maintained as a java object
+     * @param tupleBuilder ?
      * @param state
      *            The state to be initialized.
      * @throws HyracksDataException
@@ -51,21 +49,20 @@ public interface IAggregatorDescriptor {
      * too. Note that here the frame is not an input argument, since it can be
      * reset outside of the aggregator (simply reset the starting index of the
      * buffer).
-     * 
-     * @param state
+     *
      */
     public void reset();
 
     /**
      * Aggregate the value. Aggregate state should be updated correspondingly.
-     * 
+     *
      * @param accessor
      * @param tIndex
-     * @param data
+     * @param stateAccessor
      *            The buffer containing the state, if frame-based-state is used.
      *            This means that it can be null if java-object-based-state is
      *            used.
-     * @param offset
+     * @param stateTupleIndex
      * @param state
      *            The aggregate state.
      * @throws HyracksDataException
@@ -75,34 +72,34 @@ public interface IAggregatorDescriptor {
 
     /**
      * Output the partial aggregation result.
-     * 
-     * @param fieldOutput
-     *            The data output for the output frame
-     * @param data
-     *            The buffer containing the aggregation state
-     * @param offset
+     *
+     * @param tupleBuilder
+     *            The data output for the output aggregation result
+     * @param stateAccessor
+     *            The stateAccessor buffer containing the aggregation state
+     * @param tIndex
      * @param state
      *            The aggregation state.
      * @return TODO
      * @throws HyracksDataException
      */
-    public boolean outputPartialResult(ArrayTupleBuilder tupleBuilder, IFrameTupleAccessor accessor, int tIndex,
+    public boolean outputPartialResult(ArrayTupleBuilder tupleBuilder, IFrameTupleAccessor stateAccessor, int tIndex,
             AggregateState state) throws HyracksDataException;
 
     /**
      * Output the final aggregation result.
-     * 
-     * @param fieldOutput
+     *
+     * @param tupleBuilder
      *            The data output for the output frame
-     * @param data
+     * @param stateAccessor
      *            The buffer containing the aggregation state
-     * @param offset
+     * @param tIndex
      * @param state
      *            The aggregation state.
      * @return TODO
      * @throws HyracksDataException
      */
-    public boolean outputFinalResult(ArrayTupleBuilder tupleBuilder, IFrameTupleAccessor accessor, int tIndex,
+    public boolean outputFinalResult(ArrayTupleBuilder tupleBuilder, IFrameTupleAccessor stateAccessor, int tIndex,
             AggregateState state) throws HyracksDataException;
 
     public void close();

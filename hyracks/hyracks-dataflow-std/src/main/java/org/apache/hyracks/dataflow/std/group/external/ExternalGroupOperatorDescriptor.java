@@ -48,17 +48,21 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
     private final IBinaryComparatorFactory[] comparatorFactories;
     private final INormalizedKeyComputerFactory firstNormalizerFactory;
 
-    private final IAggregatorDescriptorFactory aggregatorFactory;
+    private final IAggregatorDescriptorFactory partialAggregatorFactory;
     private final IAggregatorDescriptorFactory mergerFactory;
 
     private final int framesLimit;
     private final ISpillableTableFactory spillableTableFactory;
-    private final boolean isOutputSorted;
+    private final RecordDescriptor partialRecDesc;
+    private final RecordDescriptor outRecDesc;
+    private final int tableSize;
 
-    public ExternalGroupOperatorDescriptor(IOperatorDescriptorRegistry spec, int[] keyFields, int framesLimit,
-            IBinaryComparatorFactory[] comparatorFactories, INormalizedKeyComputerFactory firstNormalizerFactory,
-            IAggregatorDescriptorFactory aggregatorFactory, IAggregatorDescriptorFactory mergerFactory,
-            RecordDescriptor recordDescriptor, ISpillableTableFactory spillableTableFactory, boolean isOutputSorted) {
+    public ExternalGroupOperatorDescriptor(IOperatorDescriptorRegistry spec, int inputSizeInTuple, int[] keyFields,
+            int framesLimit, IBinaryComparatorFactory[] comparatorFactories,
+            INormalizedKeyComputerFactory firstNormalizerFactory,
+            IAggregatorDescriptorFactory partialAggregatorFactory, IAggregatorDescriptorFactory mergerFactory,
+            RecordDescriptor partialAggRecordDesc, RecordDescriptor outRecordDesc,
+            ISpillableTableFactory spillableTableFactory) {
         super(spec, 1, 1);
         this.framesLimit = framesLimit;
         if (framesLimit <= 1) {
@@ -68,19 +72,22 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
              */
             throw new IllegalStateException("frame limit should at least be 2, but it is " + framesLimit + "!");
         }
-        this.aggregatorFactory = aggregatorFactory;
+        this.partialAggregatorFactory = partialAggregatorFactory;
         this.mergerFactory = mergerFactory;
         this.keyFields = keyFields;
         this.comparatorFactories = comparatorFactories;
         this.firstNormalizerFactory = firstNormalizerFactory;
         this.spillableTableFactory = spillableTableFactory;
-        this.isOutputSorted = isOutputSorted;
+
+        this.partialRecDesc = partialAggRecordDesc;
+        this.outRecDesc = outRecordDesc;
 
         /**
          * Set the record descriptor. Note that since this operator is a unary
          * operator, only the first record descriptor is used here.
          */
-        recordDescriptors[0] = recordDescriptor;
+        recordDescriptors[0] = outRecordDesc;
+        this.tableSize = inputSizeInTuple;
     }
 
     /*
@@ -115,8 +122,8 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
         public IOperatorNodePushable createPushRuntime(final IHyracksTaskContext ctx,
                 final IRecordDescriptorProvider recordDescProvider, final int partition, int nPartitions)
                 throws HyracksDataException {
-            return new ExternalGroupBuildOperatorNodePushable(ctx, new TaskId(getActivityId(), partition), keyFields,
-                    framesLimit, comparatorFactories, firstNormalizerFactory, aggregatorFactory,
+            return new ExternalGroupBuildOperatorNodePushable(ctx, new TaskId(getActivityId(), partition), tableSize,
+                    keyFields, framesLimit, comparatorFactories, firstNormalizerFactory, partialAggregatorFactory,
                     recordDescProvider.getInputRecordDescriptor(getActivityId(), 0), recordDescriptors[0],
                     spillableTableFactory);
         }
@@ -134,8 +141,9 @@ public class ExternalGroupOperatorDescriptor extends AbstractOperatorDescriptor 
                 IRecordDescriptorProvider recordDescProvider, final int partition, int nPartitions)
                 throws HyracksDataException {
             return new ExternalGroupMergeOperatorNodePushable(ctx, new TaskId(new ActivityId(getOperatorId(),
-                    AGGREGATE_ACTIVITY_ID), partition), comparatorFactories, firstNormalizerFactory, keyFields,
-                    mergerFactory, isOutputSorted, framesLimit, recordDescriptors[0]);
+                    AGGREGATE_ACTIVITY_ID), partition), spillableTableFactory, partialRecDesc, outRecDesc, framesLimit,
+                    keyFields, firstNormalizerFactory, comparatorFactories, mergerFactory);
+
         }
 
     }

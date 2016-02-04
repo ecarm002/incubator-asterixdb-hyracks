@@ -32,12 +32,12 @@ import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.IOperatorDescriptorRegistry;
 import org.apache.hyracks.dataflow.std.group.IAggregatorDescriptorFactory;
+import org.apache.hyracks.dataflow.std.sort.AbstractExternalSortRunMerger;
 import org.apache.hyracks.dataflow.std.sort.AbstractSortRunGenerator;
 import org.apache.hyracks.dataflow.std.sort.AbstractSorterOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.sort.Algorithm;
-import org.apache.hyracks.dataflow.std.sort.ExternalSortRunMerger;
 import org.apache.hyracks.dataflow.std.sort.ISorter;
-import org.apache.hyracks.dataflow.std.sort.RunAndMaxFrameSizePair;
+import org.apache.hyracks.dataflow.std.structures.RunAndMaxFrameSizePair;
 
 /**
  * This Operator pushes group-by aggregation into the external sort.
@@ -131,7 +131,7 @@ public class SortGroupByOperatorDescriptor extends AbstractSorterOperatorDescrip
         return new AbstractSorterOperatorDescriptor.MergeActivity(id) {
 
             @Override
-            protected ExternalSortRunMerger getSortRunMerger(IHyracksTaskContext ctx,
+            protected AbstractExternalSortRunMerger getSortRunMerger(IHyracksTaskContext ctx,
                     IRecordDescriptorProvider recordDescProvider, IFrameWriter writer, ISorter sorter,
                     List<RunAndMaxFrameSizePair> runs, IBinaryComparator[] comparators,
                     INormalizedKeyComputer nmkComputer, int necessaryFrames) {

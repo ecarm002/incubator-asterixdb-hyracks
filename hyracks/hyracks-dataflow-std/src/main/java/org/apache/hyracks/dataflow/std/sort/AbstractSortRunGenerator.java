@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.common.io.RunFileWriter;
+import org.apache.hyracks.dataflow.std.structures.RunAndMaxFrameSizePair;
 
 public abstract class AbstractSortRunGenerator implements IRunGenerator {
     protected final List<RunAndMaxFrameSizePair> runAndMaxSizes;

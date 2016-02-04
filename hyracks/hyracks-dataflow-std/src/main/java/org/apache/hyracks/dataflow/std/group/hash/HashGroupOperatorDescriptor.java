@@ -33,7 +33,7 @@ import org.apache.hyracks.dataflow.std.base.AbstractOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.group.IAggregatorDescriptorFactory;
 
 /**
- *
+ * InMemory HashGroupBy Operator
  */
 public class HashGroupOperatorDescriptor extends AbstractOperatorDescriptor {
 

@@ -28,7 +28,7 @@ public abstract class AbstractRunningAggregatorDescriptor implements IAggregator
      * @see org.apache.hyracks.dataflow.std.group.IAggregatorDescriptor#outputPartialResult(org.apache.hyracks.dataflow.common.comm.io.ArrayTupleBuilder, org.apache.hyracks.api.comm.IFrameTupleAccessor, int, org.apache.hyracks.dataflow.std.group.AggregateState)
      */
     @Override
-    public boolean outputPartialResult(ArrayTupleBuilder tupleBuilder, IFrameTupleAccessor accessor, int tIndex,
+    public boolean outputPartialResult(ArrayTupleBuilder tupleBuilder, IFrameTupleAccessor stateAccessor, int tIndex,
             AggregateState state) throws HyracksDataException {
         return false;
     }
@@ -37,7 +37,7 @@ public abstract class AbstractRunningAggregatorDescriptor implements IAggregator
      * @see org.apache.hyracks.dataflow.std.group.IAggregatorDescriptor#outputFinalResult(org.apache.hyracks.dataflow.common.comm.io.ArrayTupleBuilder, org.apache.hyracks.api.comm.IFrameTupleAccessor, int, org.apache.hyracks.dataflow.std.group.AggregateState)
      */
     @Override
-    public boolean outputFinalResult(ArrayTupleBuilder tupleBuilder, IFrameTupleAccessor accessor, int tIndex,
+    public boolean outputFinalResult(ArrayTupleBuilder tupleBuilder, IFrameTupleAccessor stateAccessor, int tIndex,
             AggregateState state) throws HyracksDataException {
         return false;
     }

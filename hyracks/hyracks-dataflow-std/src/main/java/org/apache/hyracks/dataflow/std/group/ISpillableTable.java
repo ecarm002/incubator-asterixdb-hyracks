@@ -18,26 +18,40 @@
  */
 package org.apache.hyracks.dataflow.std.group;
 
-import java.util.List;
-
-import org.apache.hyracks.api.comm.IFrame;
+import org.apache.hyracks.api.comm.IFrameTupleAccessor;
 import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
 
 public interface ISpillableTable {
 
-    public void close();
+    void close() throws HyracksDataException;
 
-    public void reset();
+    void clear(int partition) throws HyracksDataException;
 
-    public int getFrameCount();
+    boolean insert(IFrameTupleAccessor accessor, int tIndex) throws HyracksDataException;
 
-    public List<IFrame> getFrames();
+    /**
+     * Flush the certain partition to writer, and return the numOfTuples that have been flushed
+     * @param partition
+     * @param writer
+     * @param type
+     * @return
+     * @throws HyracksDataException
+     */
+    int flushFrames(int partition, IFrameWriter writer, AggregateType type) throws HyracksDataException;
 
-    public void sortFrames() throws HyracksDataException;
+    /**
+     * Get number of partitions
+     */
+    int getNumPartitions();
 
-    public boolean insert(FrameTupleAccessor accessor, int tIndex) throws HyracksDataException;
-
-    public void flushFrames(IFrameWriter writer, boolean isPartial) throws HyracksDataException;
+    /**
+     * When the table is full, it will return a proper partition which will be the flush() candidate.
+     * The {@code accessor} and {@code tIndex} given the reference to the tuple tobe inserted.
+     * @return the partition id of the victim, -1 if it failed to find a partition
+     * @param accessor
+     * @param tIndex
+     */
+    int findVictimPartition(IFrameTupleAccessor accessor, int tIndex) throws HyracksDataException;
 }
