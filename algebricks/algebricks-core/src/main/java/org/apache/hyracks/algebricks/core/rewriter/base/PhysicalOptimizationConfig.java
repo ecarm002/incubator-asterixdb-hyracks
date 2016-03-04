@@ -22,15 +22,16 @@ import java.util.Properties;
 
 public class PhysicalOptimizationConfig {
     private static final int MB = 1048576;
-    
+
     private static final String FRAMESIZE = "FRAMESIZE";
     private static final String MAX_FRAMES_EXTERNAL_SORT = "MAX_FRAMES_EXTERNAL_SORT";
     private static final String MAX_FRAMES_EXTERNAL_GROUP_BY = "MAX_FRAMES_EXTERNAL_GROUP_BY";
-    private static final String MAX_FRAMES_LEFT_INPUT_HYBRID_HASH = "MAX_FRAMES_LEFT_INPUT_HYBRID_HASH";
-    private static final String MAX_FRAMES_FOR_JOIN = "MAX_FRAMES_HYBRID_HASH";
+    private static final String MAX_FRAMES_FOR_JOIN_LEFT_INPUT = "MAX_FRAMES_FOR_JOIN_LEFT_INPUT";
+    private static final String MAX_FRAMES_FOR_JOIN = "MAX_FRAMES_FOR_JOIN";
     private static final String FUDGE_FACTOR = "FUDGE_FACTOR";
     private static final String MAX_RECORDS_PER_FRAME = "MAX_RECORDS_PER_FRAME";
-    
+    private static final String MAX_INTERVAL_DURATION = "MAX_INTERVAL_DURATION";
+
     private static final String DEFAULT_HASH_GROUP_TABLE_SIZE = "DEFAULT_HASH_GROUP_TABLE_SIZE";
     private static final String DEFAULT_EXTERNAL_GROUP_TABLE_SIZE = "DEFAULT_EXTERNAL_GROUP_TABLE_SIZE";
     private static final String DEFAULT_IN_MEM_HASH_JOIN_TABLE_SIZE = "DEFAULT_IN_MEM_HASH_JOIN_TABLE_SIZE";
@@ -40,8 +41,8 @@ public class PhysicalOptimizationConfig {
     public PhysicalOptimizationConfig() {
         int frameSize = 32768;
         setInt(FRAMESIZE, frameSize);
-        setInt(MAX_FRAMES_EXTERNAL_SORT, (int) (((long) 32 * MB) / frameSize));
-        setInt(MAX_FRAMES_EXTERNAL_GROUP_BY, (int) (((long) 32 * MB) / frameSize));
+        setInt(MAX_FRAMES_EXTERNAL_SORT, (int) ((32L * MB) / frameSize));
+        setInt(MAX_FRAMES_EXTERNAL_GROUP_BY, (int) ((32L * MB) / frameSize));
 
         // use http://www.rsok.com/~jrm/printprimes.html to find prime numbers
         setInt(DEFAULT_HASH_GROUP_TABLE_SIZE, 10485767);
@@ -56,7 +57,7 @@ public class PhysicalOptimizationConfig {
     public void setFrameSize(int frameSize) {
         setInt(FRAMESIZE, frameSize);
     }
-    
+
     public double getFudgeFactor() {
         return getDouble(FUDGE_FACTOR, 1.3);
     }
@@ -64,7 +65,7 @@ public class PhysicalOptimizationConfig {
     public void setFudgeFactor(double fudgeFactor) {
         setDouble(FUDGE_FACTOR, fudgeFactor);
     }
-    
+
     public int getMaxRecordsPerFrame() {
         return getInt(MAX_RECORDS_PER_FRAME, 512);
     }
@@ -73,15 +74,15 @@ public class PhysicalOptimizationConfig {
         setInt(MAX_RECORDS_PER_FRAME, maxRecords);
     }
 
-    public int getMaxFramesLeftInputHybridHash() {
+    public int getMaxFramesForJoinLeftInput() {
         int frameSize = getFrameSize();
-        return getInt(MAX_FRAMES_LEFT_INPUT_HYBRID_HASH, (int) (140L * 1024 * MB / frameSize));
+        return getInt(MAX_FRAMES_FOR_JOIN_LEFT_INPUT, (int) (140L * 1024 * MB / frameSize));
     }
 
-    public void setMaxFramesLeftInputHybridHash(int frameLimit) {
-        setInt(MAX_FRAMES_LEFT_INPUT_HYBRID_HASH, frameLimit);
+    public void setMaxFramesForJoinLeftInput(int frameLimit) {
+        setInt(MAX_FRAMES_FOR_JOIN_LEFT_INPUT, frameLimit);
     }
-    
+
     public int getMaxFramesForJoin() {
         int frameSize = getFrameSize();
         return getInt(MAX_FRAMES_FOR_JOIN, (int) (64L * MB / frameSize));
@@ -89,6 +90,14 @@ public class PhysicalOptimizationConfig {
 
     public void setMaxFramesForJoin(int frameLimit) {
         setInt(MAX_FRAMES_FOR_JOIN, frameLimit);
+    }
+
+    public int getMaxIntervalDuration() {
+        return getInt(MAX_INTERVAL_DURATION, 1000);
+    }
+
+    public void getMaxIntervalDuration(int duration) {
+        setInt(MAX_INTERVAL_DURATION, duration);
     }
 
     public int getMaxFramesExternalGroupBy() {
@@ -99,7 +108,7 @@ public class PhysicalOptimizationConfig {
     public void setMaxFramesExternalGroupBy(int frameLimit) {
         setInt(MAX_FRAMES_EXTERNAL_GROUP_BY, frameLimit);
     }
-    
+
     public int getMaxFramesExternalSort() {
         int frameSize = getFrameSize();
         return getInt(MAX_FRAMES_EXTERNAL_SORT, (int) (((long) 32 * MB) / frameSize));
@@ -144,7 +153,7 @@ public class PhysicalOptimizationConfig {
         else
             return Integer.parseInt(value);
     }
-    
+
     private void setDouble(String property, double value) {
         properties.setProperty(property, Double.toString(value));
     }
